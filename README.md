@@ -1,4 +1,4 @@
-#Purpose
+# Purpose
 
 KISS API is for lazy programmers who are bored of writing REST API/OpenAPI specifications with endless repetitions. OpenAPI is great and there are plenty of tools to generate libraries and code stubs and skeletons from the specification. But it is overloaded with self-evident syntax and semantics. Many programming languages have shown how to define types, classes and interfaces in a concise and easy-to-read form without going insane. OpenAPI while using JSON Schemas is the opposite of that.
 
