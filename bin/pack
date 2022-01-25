@@ -1,0 +1,14 @@
+#!/bin/bash
+
+p=`pwd`
+
+cd ..
+[ -d KissApi ] || cd ..
+
+rm /tmp/KissApi-0.9.0.tar.gz
+
+tar --exclude='\.svn' --exclude-vcs --exclude='prod' --exclude='dumps' --exclude='*.psd' -cvzf /tmp/KissApi-0.9.0.tar.gz KissApi
+
+cd $p
+
+echo "package ready in /tmp/KissApi-0.9.0.tar.gz"

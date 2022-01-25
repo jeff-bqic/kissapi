@@ -1,0 +1,256 @@
+@types <types/all_types.kapi>
+@types <types/test_types.kapi>
+
+api: Test
+{
+    prolog
+    {
+        kissapi: 1.0
+        title: Test API
+        version: 1.0
+
+        license:
+        {
+            name: Copyright by jeff
+            url: https://www.bitscon.biz
+        }
+
+        contact:
+        {
+            name: Jeff
+            email: jeff@bitscon.biz
+        }
+
+        description: '
+        some CommonMark
+        description'
+
+        servers
+        [
+            'https://api.bitscon.biz/api/v1',
+            'https://test.api.bitscon.biz/api/v1'
+        ]
+    }
+
+    Security: [ bearer ]
+
+    parameters
+    {
+        header: 
+        [
+            sessionId:
+            {
+                name: X-SESSION-ID 
+                format: uuid
+                pattern: "'^[0-9A-Fa-f]{8}(?:-[0-9A-Fa-f]{4}){3}-[0-9A-Fa-f]{12}$'"
+                maxLength: 36
+                description: 'the session ID'
+            }
+        ]
+        query:
+        [
+            userId?:
+            {
+                type: UserId
+                description: 'the user id'
+            }
+        ]
+    }
+
+    entities
+    {
+        description: '
+            the multiline
+            description of 
+            the entitiy service'
+
+        security: [ bearer ]
+
+        parameters:
+        {
+            header: [ sessionId ]
+        }
+
+        bla/blu/{user}
+        {
+            security
+            [
+                basic:
+                {
+                    id: basicAuth
+                },
+                apiKey: apiKey,
+                apiKey:
+                {
+                    id: appId,
+                    in: cookie
+                    name: X-APP-ID
+                }
+            ]
+            parameters
+            {
+                query:  [ userId ]
+            }
+            operations: 
+            [ 
+                create
+                {
+                    operarionId: newUser,
+                    summary: create new user,
+                    descritption: '
+                    multiline create
+                    new user
+                    ',
+                    responses: [ 200, 400, 401, 403, 406, 500 ]
+                },
+                getList
+                {
+                    summary: list of users
+                    description: 'returns a list of users'
+                    pagination: 1,
+                    search: 1,
+                },
+                get,
+                upcreate, 
+                update, 
+                delete 
+            ]
+        }
+
+        foo/{user}/bar/{account}
+        {
+            security
+            [
+                basic:
+                {
+                    id: basicAuth
+                },
+                apiKey: apiKey,
+                apiKey:
+                {
+                    id: appId,
+                    in: cookie
+                    name: X-APP-ID
+                }
+            ]
+            parameters
+            {
+                header: [ sessionId ]
+                query:  [ userId ]
+            }
+            operations: 
+            [ 
+                create
+                {
+                    operationId: newAccount,
+                    summary: create new account for a user,
+                    description: '
+                    multiline create
+                    new account',
+                    responses: [ 200, 400, 500 ]
+                },
+                getList
+                {
+                    summary: list of all accounts of a user
+                    description: "returns a list of a user's accounts"
+                },
+                get
+                {
+                    summary: get account for a user,
+                    description: '
+                    multiline get
+                    user account',
+                    parameters: 
+                    {
+                        query: [accountType!: AccountType]
+                    }
+                }, 
+                upcreate, 
+                update, 
+                delete 
+            ]
+        }
+
+        foo/{user}/bar/{account}/bor/{transaction}
+        {
+            parameters
+            {
+                header: [ sessionId ]
+            }
+            operations: 
+            [ 
+                create, getList(PSO), get, upcreate, update, delete 
+            ]
+        }
+
+        blubber/{person}/blo
+        {
+            security
+            [
+                bearer: 
+                { 
+                    id: bearerAuth2, 
+                    bearerFormat: UUID 
+                }
+            ]
+            parameters
+            {
+                header: [ sessionId1!: SessionId(X-SESSION-ID1) ]
+                query: [ userId ]
+            }
+            operations: 
+            [ 
+                create, 
+                get, 
+                upcreate, 
+                update 
+            ]
+        }
+    }
+
+    documents
+    {
+        security: [ bearer ]
+
+        description: '
+            the multiline
+            description of 
+            the documents service'
+
+        parameters
+        {
+            header: [ sessionId2: SessionId(X-SESSION-ID2) ]
+        }
+
+        {document}
+        {
+            parameters
+            {
+                header: [ sessionId ]
+                query:  [ documentId ]
+            }
+            operations: 
+            [ 
+                create
+                {
+                    request:
+                    {
+                        type?: DocumentType
+                        file: File
+                    }
+                    response:
+                    {
+                        id: DocumentId
+                        type: DocumentType
+                    }
+                }, 
+                getList(PSOU), 
+                get, 
+                upcreate, 
+                update, 
+                delete 
+            ]
+        }
+    }
+}
+

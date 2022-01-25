@@ -1,0 +1,23 @@
+Document
+{
+    type: DocumentType
+    file: File
+}
+
+UserBarAccountBorTransaction
+{
+    amount: Num
+    {
+        description: the transaction amount
+        example: "23453.45143"
+    }
+}
+
+UserBarAccount
+{
+    accountNo: Str[..255]      
+    {
+        description: the account number
+        example: "23452345234"
+    }
+}

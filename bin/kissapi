@@ -1,0 +1,94 @@
+#!/usr/bin/perl
+
+use FindBin::Real;
+
+use lib FindBin::Real::Bin(),
+        FindBin::Real::Bin() . '/perl',
+        FindBin::Real::Bin() . '/..',
+        FindBin::Real::Bin() . '/../perl';
+
+use Data::Dumper::Concise;
+use Getopt::Long;
+
+use KissApi::Creator;
+
+my $options =
+{
+    language => '',
+    debug    => 0,
+    trace    => 0,
+    help     => 0,
+};
+
+#
+# usage helper function
+#
+#  parameters:
+#   none
+#
+#  returns:
+#   nothing
+#
+#  notes:
+#   exits the program
+#
+#############################################################################
+
+sub usage
+{
+    my ($msg) = @_;
+
+    my $indent = " " x length($0);
+
+    print << "EOT";
+
+$0 [--language=<lang[,<lang>]] [--debug] [--trace] [--help] <api-files>
+
+$indent --language=...    ... create OpenAPI client/server libraries for the
+$indent                       given programming languages  with
+$indent                       openapi-generator-cli
+$indent --debug|-d        ... prints debug output
+$indent --trace|-t        ... prints Parse::RecDescent traces
+$indent --help|-h         ... prints this message
+
+$indent <api-files>       ... the file(s) that each describe a
+$indent                       KISS API 
+
+$msg
+EOT
+
+    exit;
+}
+
+#############################################################################
+#
+# main
+#
+#############################################################################
+
+GetOptions($options,
+           'language=s',
+           'debug=i',
+           'trace',
+           'help',
+          );
+
+usage if $options->{help};
+
+$::RD_TRACE = 1 if $options->{trace};
+$::debug = $options->{debug};
+
+my @files = @ARGV;
+
+foreach my $file (@files)
+{
+    my $kissapi = KissApi::Creator->new;
+
+    $kissapi->parse_api($file);
+
+    $kissapi->api->print if $::debug;
+
+    $kissapi->print_openapi;
+
+    $kissapi->generate_client_libs($_) foreach split /\s*,\s*/, $options->{language};
+}

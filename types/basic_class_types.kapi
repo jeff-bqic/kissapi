@@ -1,0 +1,32 @@
+Error <the error>
+{
+    domain: Str[..50]
+    {
+        description: "the error domain"
+        example: "AUTHENTICATION"
+    }
+    name: Str[..50]
+    {
+        description: "the name of the error"
+        example: "WRONG_CREDENTIALS"
+    }
+    code: Str[6]
+    {
+        description: "the error code"
+        pattern: /^\d{6}$/
+        example: "102892"
+    }
+    message: Str[..255]
+    {
+        description: "the error message to be displayed"
+        example: "wrong user credentials provided"
+    }
+}
+
+Pagination
+{
+    page: PaginationPage
+    limit: PaginationLimit
+    last: PaginationLast
+    total: PaginationTotal
+}

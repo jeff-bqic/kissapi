@@ -1,0 +1,7 @@
+#!/bin/bash
+
+file=$1
+bundle=`dirname $1`
+bundle="${bundle}/bundle.yml"
+
+openapi bundle $file --ext yml -o $bundle

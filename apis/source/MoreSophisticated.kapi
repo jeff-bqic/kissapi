@@ -1,0 +1,108 @@
+    @types <types/simple_types.kapi>
+    @types <types/class_types.kapi>
+    @types <types/mstypes.kapi>
+
+    api: MoreSophisticated
+    {
+        prolog
+        {
+            kissapi: 1.0
+            title: MoreSophisticated API
+            version: 1.0
+
+            license:
+            {
+                name: Copyright by kissapi
+                url: https://www.kissapi.de/
+            }
+
+            contact:
+            {
+                name: Hugo Hacker
+                email: hugohacker@kissapi.de
+            }
+
+            description: 'My More Sophisticated API'
+
+            servers
+            [
+                'https://api.kissapi.de/api/v1',
+                'https://ms.api.kissapi.de/api/v1'
+                'https://127.0.0.1/msapi/v1'
+            ]
+        }
+
+        parameters
+        {
+            header:
+            [
+                sessionId:
+                {
+                    name: X-SESSION-ID
+                    format: uuid
+                    pattern: "'^[0-9A-Fa-f]{8}(?:-[0-9A-Fa-f]{4}){3}-[0-9A-Fa-f]{12}$'"
+                    maxLength: 36
+                    description: 'the session ID'
+                }
+            ]
+        }
+
+        entities
+        {
+            description: '
+                multiline description
+                of the entities service'
+
+            security: [ bearer ]
+
+            parameters:
+            {
+                header: [ sessionId ]
+            }
+
+            {user}
+            {
+                operations: 
+                [ 
+                    create 
+                    {
+                        operationId: newUser,
+                        summary: create a new user
+                        description: '
+                        multiline description of 
+                        the new user endpoint'
+                        responses: [ 200, 400, 401, 403, 406, 500]
+                    }
+                    getList(PSOU)
+                    get 
+                    upcreate 
+                    update 
+                    delete 
+                ]
+            }
+
+            foo/{user}/bar/{account}
+            {
+                security: [ apiKey: { id: appId } ]
+
+                operations:
+                [
+                    create { responses: [ 200, 400, 500 ] },
+                    getList
+                    {
+                        summary: list of all user accounts
+                        description: "returns a list of an user's accounts"
+                    },
+                    get
+                    {
+                        parameters:
+                        {
+                            query: [ accountType: AccountType ]
+                        }
+                    },
+                    delete
+                ]
+            }
+        }
+    }
+

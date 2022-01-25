@@ -1,0 +1,5 @@
+UserBarAccount: BankAccount <a bank account with an IBAN>
+{
+    iban: IBAN
+    bic: BIC
+}

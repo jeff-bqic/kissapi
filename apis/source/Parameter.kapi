@@ -1,0 +1,38 @@
+@types <types/simple_types.kapi>
+@types <types/basic_class_types.kapi>
+
+api: Parameter
+{
+    prolog
+    {
+        kissapi: 1.0
+        title: Parameter API
+        version: 1.0
+
+        license:
+        {
+            name: Copyright by hugo hacker
+            url: https://www.kissapi.de/
+        }
+
+        contact:
+        {
+            name: Hugo Hacker
+            email: hugo@hacker.com
+        }
+
+        description: 'My Simple API'
+
+        servers
+        [
+            'https://api.kissapi.de/api/v1',
+        ]
+    }
+
+    parameters
+    {
+        my/path/with/{parameter}
+        {
+        }
+    }
+}

@@ -1,0 +1,45 @@
+#!/usr/bin/perl
+
+use Parse::RecDescent;
+use File::Slurp;
+use Term::ANSIColor qw(:constants);
+
+$| = 1;
+
+chdir("KissApi");
+
+my $tgrammar = read_file($ARGV[0] || "../grammars/types_grammar");
+my $apigrammar = read_file($ARGV[1] || "../grammars/kapi_grammar");
+
+Parse::RecDescent->Precompile(
+    {
+        -runtime_class => "KissApi::ParserRuntime",
+    },
+    $tgrammar,
+    "KissApi::TypeParser"
+                             ) || die "cannot precompile type parser";
+
+print BOLD, BLUE, ON_WHITE, "type parser compilation successfully finished!\n", RESET;
+
+Parse::RecDescent->Precompile(
+    {
+        -runtime_class => "KissApi::ParserRuntime",
+    },
+    $apigrammar,
+    "KissApi::ApiParser"
+                             ) || die "cannot precompile api parser";
+
+print BOLD, BLUE, ON_WHITE, "api parser compilation successfully finished!\n", RESET;
+
+Parse::RecDescent->PrecompiledRuntime('KissApi::ParserRuntime') || die "cannot precompile parser runtime";
+
+Parse::RecDescent->Precompile(
+    {
+        -standalone => 1,
+        -runtime_class => 'KissApi::ParserRuntime',
+    },
+    '',
+    'KissApi::ParserRuntime'
+                             ) || die "cannot precompile parser runtime";
+
+print BOLD, BLUE, ON_WHITE, "parser runtime compilation successfully finished!\n", RESET;

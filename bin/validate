@@ -1,0 +1,4 @@
+#!/bin/bash
+
+openapi lint $*
+# spectral lint --ruleset .spectral.yaml $*

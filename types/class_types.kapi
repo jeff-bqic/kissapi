@@ -1,0 +1,328 @@
+/*
+********************************************************************************
+    class type definitions
+********************************************************************************
+*/
+
+AccessRefreshTokenPair
+{
+    accessToken: JWT
+    {
+        description: "the access token"
+        example: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIi..."
+    }
+    refreshToken: JWT
+    {
+        description: "the refresh token"
+        example: "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3Mi..."
+    }
+}
+
+AccountHolder
+{
+    firstName: Str[..255]      
+    {
+        description: "the account holder's first name"
+        example: "Dagobert"
+    }
+    lastName: Str[..255]      
+    {
+        description: "the account holder's last name"
+        example: "Duck"
+    }
+}
+
+Address
+{
+    id?: UUID
+    {
+        description: "the ID of the address"
+        example: "2cc9918f-c3ec-460d-ac07-f65bfae973df"
+    }
+    addressType: AddressType
+    {
+        example: "RESIDENTIAL"
+    }
+    addressLine1?: Str[..255]
+    {
+        description: "the 1st address line"
+        example: "Dead End 1"
+    }
+    addressLine2?: Str[..255]
+    {
+        description: "the 2nd address line"
+        example: "Rear Building A"
+    }
+    postbox?: Str[..50]
+    {
+        description: "the post box"
+        example: "PB 12345"
+    }
+    zipCode: Str[..20]
+    {
+        description: "the zip code"
+        example: "54823"
+    }
+    city: Str[..100]
+    {
+        description: "the city's name"
+        example: "L.E."
+    }
+    state?: Str[..50]
+    {
+        description: "the state's name"
+        example: "Saxony"
+    }
+    country: Str[2]
+    {
+        description: "the ISO 3166-1 alpha3 code of the country"
+        example: "DE"
+    }
+}
+
+BankAccount
+{
+    id?: UUID
+    {
+        description: "the ID of the bank account"
+        example: "cf7e7657-fcee-49b4-ab4c-ceb7862a69df"
+    }
+    accountHolder: AccountHolder 
+    {
+        description: "the account holder"
+        example:
+        {
+            firstName: "Max"
+            lastName:  "Mütze"
+        }
+    }
+    bankName: Str[..50]
+    {
+        description: "the bank's name"
+        example: "Sand Bank"
+    }
+}
+
+BusinessPartner
+{
+    id?: UUID
+    {
+        description: "the ID of the business partner"
+        example: "2e3701a8-55d5-4bcb-b5e8-2090d856b8ea"
+    }
+    shortName?: Str[..30]
+    {
+        description: "the short name of the business partner"
+        example: "My Land Lord"
+    }
+}
+
+Document
+{
+    id?: UUID
+    {
+        description: "the document's ID"
+        example: "73d29742-b57d-4b50-b3e7-209294808e31"
+    }
+    created: DateTime
+    {
+        description: "the creation date and time"
+        example: "2021-12-12T12:12:12"
+    }
+    expiry?: DateTime
+    {
+        description: "the expiry date and time"
+        example: "2022-12-12T12:12:11"
+    }
+    type: DocumentType
+    {
+        example: "CONTRACT_EXTENSION"
+    }
+    format: Str[..50]
+    {
+        description: "the mime type of the document"
+        example: "image/png"
+    }
+    data: Binary
+    {
+        description: "the document's data base64 encoded"
+        example: "YWJmYThhYzUtNGQ5Mi00ZWJmLTk3MTUtYzQyNjBjOGI3Y2IxCg=="
+    }
+}
+
+Error <the error <with greater than\>>
+{
+    domain: Str[..50]
+    {
+        description: "the error domain"
+        example: "AUTHENTICATION"
+    }
+    name: Str[..50]
+    {
+        description: "the name of the error"
+        example: "WRONG_CREDENTIALS"
+    }
+    code: Str[6]
+    {
+        description: "the error code"
+        pattern: /^\d{6}$/
+        example: "102892"
+    }
+    message: Str[..255]
+    {
+        description: "the error message to be displayed"
+        example: "wrong user credentials provided"
+    }
+}
+
+IBANAccount: BankAccount <an IBAN bank account>
+{
+    iban: IBAN
+    bic: BIC
+}
+
+OtherBankAccount: BankAccount
+{
+    accountNumber: Str[..50]
+    {
+        description: "the account number"
+        pattern: /^[a-z0-9][-a-z0-9 ]+$/i
+        example: "1234-56-7890"
+    }
+    sortCode: Str[..20]
+    {
+        description: "the bank's national sort code/transit number/routing number"
+        pattern: /^[a-z0-9][-a-z0-9 ]+$/i
+        example: "12-34-56"
+    }
+}
+
+Pagination
+{
+    page: PaginationPage
+    limit: PaginationLimit
+    last: PaginationLast
+    total: PaginationTotal
+}
+
+Person
+{
+    salutation: Str[..20]
+    {
+        description: "the person's salutation"
+        example: "Ms"
+    }
+    title: Str[..50]
+    {
+        description: "the person's title"
+        example: "Prof. Dr."
+    }
+    firstName: Str[..255]
+    {
+        description: "the person's first name"
+        example: "Hugo"
+    }
+    middleName: Str[..255]
+    {
+        description: "the person's middle name"
+        example: "Balthazar"
+    }
+    lastName: Str[..255]
+    {
+        description: "the person's last name"
+        example: "Hacker"
+    }
+    gender: Gender
+    {
+        description: "the person's gender"
+        example: "FEMALE"
+    }
+    date_of_birth: Date
+    {
+        description: "the person's date of birth"
+        example: "1970-01-01"
+    }
+    language: Language
+    {
+        description: "the person's language"
+        example: "EN"
+    }
+    email: Email
+    {
+        description: "the person's e-mail address"
+        example: "hugo@hacker.com"
+    }
+    phone: PhoneNumber
+    {
+        description: "the person's phone number"
+        example: "+49 345 - 974 5839"
+    }
+}
+
+User
+{
+    id?: UUID
+    {
+        description: "the user's ID"
+        example: "cbbcb891-b0d8-42ab-b760-0bd6651179ad"
+    }
+    person?: Person
+    {
+        description: "the person the user belongs to"
+    }
+    login: Str[..50]
+    {
+        description: "the user's login"
+        example: "hugo@hacker.com"
+    }
+    active?: Bool
+    {
+        description: "the active flag"
+        example: "true"
+    }
+    created?: DateTime
+    {
+        description: "the user's creation date and time"
+        example: "2021-01-01T00:00:01"
+    }
+    language?: Language
+    {
+        description: "the user's language"
+        example: "EN"
+    }
+    passwordChange?: Bool
+    {
+        description: "flag to indicate the necessity of a password change"
+        example: "false"
+    }
+    lastLogin?: DateTime
+    {
+        description: "timestamp of the last login"
+        example: "2021-12-12T23:59:59"
+    }
+    failedLogins?: NonNegativeInt
+    {
+        description: "the number of failed logins"
+        example: "2"
+    }
+    groups?: Array
+    {
+        description: "a list of groups the user belongs to"
+        uniqueItems: true
+        items: Str[..20]
+        {
+            max: 10
+        }
+        example: "[ 'Group1', 'Group2' ]"
+    }
+    roles?: Array
+    {
+        description: "a list of the user's roles"
+        items: Str[..20]
+        {
+            max: 10
+            unique: true
+        }
+        example: "[ 'Admin', 'Sales' ]"
+    }
+}

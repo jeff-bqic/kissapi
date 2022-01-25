@@ -1,0 +1,862 @@
+openapi: 3.1.0
+info: 
+  title: Very Simple API
+  version: '1.0'
+  license: 
+    name: Copyright by kissapi
+    url: https://www.kissapi.de/
+  contact: 
+    name: Hugo Hacker
+    email: hugohacker@kissapi.de
+  description: My Very Simple API
+
+servers: 
+  - url: https://api.kissapi.de/api/v1
+  - url: https://verysimple.api.kissapi.de/api/v1
+  - url: https://127.0.0.1/verysimpleapi/v1
+
+components: 
+
+  securitySchemes: 
+    BearerAuth: 
+      bearerFormat: JWT
+      scheme: bearer
+      type: http
+
+  parameters: 
+    userIdPathParam: 
+      name: userId
+      in: path
+      required: true
+      schema: 
+        $ref: '#/components/schemas/UserId'
+    orderByQueryParam: 
+      name: orderBy
+      in: query
+      required: false
+      schema: 
+        $ref: '#/components/schemas/OrderBy'
+    paginationLastQueryParam: 
+      name: paginationLast
+      in: query
+      required: false
+      schema: 
+        $ref: '#/components/schemas/PaginationLast'
+    paginationLimitQueryParam: 
+      name: paginationLimit
+      in: query
+      required: false
+      schema: 
+        $ref: '#/components/schemas/PaginationLimit'
+    paginationPageQueryParam: 
+      name: paginationPage
+      in: query
+      required: false
+      schema: 
+        $ref: '#/components/schemas/PaginationPage'
+    paginationTotalQueryParam: 
+      name: paginationTotal
+      in: query
+      required: false
+      schema: 
+        $ref: '#/components/schemas/PaginationTotal'
+    searchForQueryParam: 
+      name: searchFor
+      in: query
+      required: false
+      schema: 
+        $ref: '#/components/schemas/SearchFor'
+
+  schemas: 
+    AccountHolder: 
+      title: AccountHolder
+      description: a AccountHolder
+      type: object
+      properties: 
+        firstName: 
+          description: the account holder's first name
+          example: 'Dagobert'
+          type: string
+          maxLength: 255
+        lastName: 
+          description: the account holder's last name
+          example: 'Duck'
+          type: string
+          maxLength: 255
+      required: 
+        - firstName
+        - lastName
+    AddressType: 
+      title: AddressType
+      description: the type of the address
+      example: RESIDENTIAL
+      type: string
+      enum: [RESIDENTIAL,SHIPPING,BILLING]
+    BIC: 
+      title: BIC
+      description: Business Identifier Code (ISO 9362)
+      example: 'DEUTDEFFXXX'
+      type: string
+      minLength: 8
+      maxLength: 11
+      pattern: '^[A-Za-z]{4}[A-Za-z]{2}[A-Za-z0-9]{2}([A-Za-z0-9]{3})?$'
+    BankAccount: 
+      title: BankAccount
+      description: a BankAccount
+      type: object
+      properties: 
+        id: 
+          description: the ID of the bank account
+          example: 'cf7e7657-fcee-49b4-ab4c-ceb7862a69df'
+          type: string
+          minLength: 36
+          maxLength: 36
+          format: uuid
+          pattern: '^[0-9A-Fa-f]{8}(?:-[0-9A-Fa-f]{4}){3}-[0-9A-Fa-f]{12}$'
+        accountHolder: 
+          $ref: '#/components/schemas/AccountHolder'
+        bankName: 
+          description: the bank's name
+          example: 'Sand Bank'
+          type: string
+          maxLength: 50
+      required: 
+        - accountHolder
+        - bankName
+    DocumentType: 
+      title: DocumentType
+      description: the type of a document
+      example: 'CONTRACT'
+      type: string
+      minLength: 1
+      maxLength: 50
+    Email: 
+      title: Email
+      description: an e-mail address
+      example: 'hugo@hacker.com'
+      type: string
+      pattern: '^[A-Za-z0-9!#''$%&*+\/=?^_‘\{\|\}~-]+(?:\.[A-Za-z0-9!#''$%&*+\/=?^_‘{|}~-]+)*@(?:[A-Za-z0-9](?:[A-Za-z0-9-]*[A-Za-z0-9])?\.)+[A-Za-z0-9](?:[A-Za-z0-9-]*[A-Za-z0-9])?$'
+    Error: 
+      title: Error
+      description: the error <with greater than>
+      type: object
+      properties: 
+        domain: 
+          description: the error domain
+          example: 'AUTHENTICATION'
+          type: string
+          maxLength: 50
+        name: 
+          description: the name of the error
+          example: 'WRONG_CREDENTIALS'
+          type: string
+          maxLength: 50
+        code: 
+          description: the error code
+          example: '102892'
+          type: string
+          minLength: 6
+          maxLength: 6
+          pattern: '^\d{6}$'
+        message: 
+          description: the error message to be displayed
+          example: 'wrong user credentials provided'
+          type: string
+          maxLength: 255
+      required: 
+        - domain
+        - name
+        - code
+        - message
+    Gender: 
+      title: Gender
+      description: the gender of a person
+      example: FEMALE
+      type: string
+      enum: [FEMALE,MALE,OTHER]
+    GetUsersResponse: 
+      title: GetUsersResponse
+      description: users
+      type: object
+      properties: 
+        users: 
+          $ref: '#/components/schemas/Users'
+        pagination: 
+          $ref: '#/components/schemas/Pagination'
+      required: 
+        - users
+        - pagination
+    IBAN: 
+      title: IBAN
+      description: International Bank Account Number (ISO 13616-1:2007)
+      example: 'DE75 5121 0800 1245 1261 99'
+      type: string
+      minLength: 16
+      maxLength: 42
+      pattern: '^([A-Za-z]{2}[ \-]?[0-9]{2})(?=(?:[ \-]?[A-Za-z0-9]){9,30}$)((?:[ \-]?[A-Za-z0-9]{3,5}){2,7})([ \-]?[A-Za-z0-9]{1,3})?$'
+    JWT: 
+      title: JWT
+      description: a JSON Web Token
+      example: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpdGVtcyI6WzAsMiw0XSwiaWF0IjoxNDkzMTM5NjU5LCJleHAiOjE0OTMxNDMyNTl9.932ZxtZzy1qhLXs932hd04J58Ihbg5_g_rIrj-Z16Js'
+      type: string
+      pattern: '^[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.([A-Za-z0-9_-]+)?$'
+    Language: 
+      title: Language
+      description: ISO 639-1 alpha2 language code
+      example: 'EN'
+      type: string
+      minLength: 2
+      maxLength: 2
+    NonNegativeInt: 
+      title: NonNegativeInt
+      description: a natural number (integer greater or equal zero)
+      example: 0
+      type: integer
+      format: int64
+      minimum: 0
+    OrderBy: 
+      title: OrderBy
+      description: >
+        string with a comma separated list of sort criteria 
+        composed of a name direction pair like "field:asc|desc"
+        where "asc" is the default direction
+      example: 'name:desc,created'
+      type: string
+      minLength: 255
+      maxLength: 255
+    Pagination: 
+      title: Pagination
+      description: a Pagination
+      type: object
+      properties: 
+        page: 
+          $ref: '#/components/schemas/PaginationPage'
+        limit: 
+          $ref: '#/components/schemas/PaginationLimit'
+        last: 
+          $ref: '#/components/schemas/PaginationLast'
+        total: 
+          $ref: '#/components/schemas/PaginationTotal'
+      required: 
+        - page
+        - limit
+        - last
+        - total
+    PaginationLast: 
+      title: PaginationLast
+      description: the last page of a pagination
+      example: 13
+      type: integer
+      format: int64
+    PaginationLimit: 
+      title: PaginationLimit
+      description: the maximum number of entries per page
+      example: 20
+      type: integer
+      format: int64
+    PaginationPage: 
+      title: PaginationPage
+      description: the current page of the pagination
+      example: 4
+      type: integer
+      format: int64
+    PaginationTotal: 
+      title: PaginationTotal
+      description: the total of entries of a pagination
+      example: 1024
+      type: integer
+      format: int64
+    Person: 
+      title: Person
+      description: a Person
+      type: object
+      properties: 
+        salutation: 
+          description: the person's salutation
+          example: 'Ms'
+          type: string
+          maxLength: 20
+        title: 
+          description: the person's title
+          example: 'Prof. Dr.'
+          type: string
+          maxLength: 50
+        firstName: 
+          description: the person's first name
+          example: 'Hugo'
+          type: string
+          maxLength: 255
+        middleName: 
+          description: the person's middle name
+          example: 'Balthazar'
+          type: string
+          maxLength: 255
+        lastName: 
+          description: the person's last name
+          example: 'Hacker'
+          type: string
+          maxLength: 255
+        gender: 
+          $ref: '#/components/schemas/Gender'
+        date_of_birth: 
+          description: the person's date of birth
+          example: 1970-01-01
+          type: string
+          format: date
+        language: 
+          $ref: '#/components/schemas/Language'
+        email: 
+          $ref: '#/components/schemas/Email'
+        phone: 
+          $ref: '#/components/schemas/PhoneNumber'
+      required: 
+        - salutation
+        - title
+        - firstName
+        - middleName
+        - lastName
+        - gender
+        - date_of_birth
+        - language
+        - email
+        - phone
+    PhoneNumber: 
+      title: PhoneNumber
+      description: a phone number 
+      example: '+49 345 - 974 5839'
+      type: string
+      minLength: 20
+      maxLength: 20
+      pattern: '^[\+]?[(]?[0-9]{0,4}[)]?[-\s\.]?[0-9-\s]+$'
+    SearchFor: 
+      title: SearchFor
+      description: a comma separated list of search criteria
+      example: 'name=B%,active=1'
+      type: string
+      minLength: 255
+      maxLength: 255
+    UUID: 
+      title: UUID
+      description: an UUID
+      example: 'cdb7915d-41cb-45b7-948e-b62205dff2f9'
+      type: string
+      minLength: 36
+      maxLength: 36
+      format: uuid
+      pattern: '^[0-9A-Fa-f]{8}(?:-[0-9A-Fa-f]{4}){3}-[0-9A-Fa-f]{12}$'
+    User: 
+      title: User
+      description: a User
+      type: object
+      properties: 
+        id: 
+          description: the user's ID
+          example: 'cbbcb891-b0d8-42ab-b760-0bd6651179ad'
+          type: string
+          minLength: 36
+          maxLength: 36
+          format: uuid
+          pattern: '^[0-9A-Fa-f]{8}(?:-[0-9A-Fa-f]{4}){3}-[0-9A-Fa-f]{12}$'
+        person: 
+          $ref: '#/components/schemas/Person'
+        login: 
+          description: the user's login
+          example: 'hugo@hacker.com'
+          type: string
+          maxLength: 50
+        active: 
+          description: the active flag
+          example: true
+          type: boolean
+        created: 
+          description: the user's creation date and time
+          example: 2021-01-01T00:00:01
+          type: string
+          format: date-time
+        language: 
+          $ref: '#/components/schemas/Language'
+        passwordChange: 
+          description: flag to indicate the necessity of a password change
+          example: false
+          type: boolean
+        lastLogin: 
+          description: timestamp of the last login
+          example: 2021-12-12T23:59:59
+          type: string
+          format: date-time
+        failedLogins: 
+          $ref: '#/components/schemas/NonNegativeInt'
+        groups: 
+          description: a list of groups the user belongs to
+          example: [ 'Group1', 'Group2' ]
+          type: array
+          maxItems: 10
+          uniqueItems: true
+          items: 
+            type: string
+        roles: 
+          description: a list of the user's roles
+          example: [ 'Admin', 'Sales' ]
+          type: array
+          maxItems: 10
+          uniqueItems: true
+          items: 
+            type: string
+      required: 
+        - login
+    UserId: 
+      title: UserId
+      description: an UUID
+      example: '6a028baf-366b-4e8b-827f-af71e3c04423'
+      type: string
+      minLength: 36
+      maxLength: 36
+      format: uuid
+      pattern: '^[0-9A-Fa-f]{8}(?:-[0-9A-Fa-f]{4}){3}-[0-9A-Fa-f]{12}$'
+    Users: 
+      title: Users
+      description: list of users
+      type: array
+      minItems: 0
+      maxItems: 500
+      uniqueItems: true
+      items: 
+        $ref: '#/components/schemas/User'
+
+tags: 
+  - name: user
+    description: my simple user service
+
+paths: 
+  '/user': 
+    post: 
+      tags: 
+        - user
+      operationId: createUser
+      summary: create one user
+      description: create a new user
+      security: 
+        - BearerAuth: []
+      requestBody: 
+        required: true
+        content: 
+          application/json: 
+            schema: 
+              $ref: '#/components/schemas/User'
+      responses: 
+        '200': 
+          description: create a new user
+          content: 
+            application/json: 
+              schema: 
+                $ref: '#/components/schemas/UserId'
+        '201': 
+          description: create a new user
+          content: 
+            application/json: 
+              schema: 
+                $ref: '#/components/schemas/UserId'
+        '202': 
+          description: create a new user
+        '400': 
+          description: Bad Request Error
+          content: 
+            application/json: 
+              schema: 
+                $ref: '#/components/schemas/Error'
+        '401': 
+          description: Unauthorized Error
+          content: 
+            application/json: 
+              schema: 
+                $ref: '#/components/schemas/Error'
+        '403': 
+          description: Forbidden Error
+          content: 
+            application/json: 
+              schema: 
+                $ref: '#/components/schemas/Error'
+        '406': 
+          description: Not Acceptable Error
+          content: 
+            application/json: 
+              schema: 
+                $ref: '#/components/schemas/Error'
+        '415': 
+          description: Unsupporrted Media Type Error
+          content: 
+            application/json: 
+              schema: 
+                $ref: '#/components/schemas/Error'
+        '429': 
+          description: Too Many Requests Error
+          content: 
+            application/json: 
+              schema: 
+                $ref: '#/components/schemas/Error'
+        '500': 
+          description: Internal Server Error
+          content: 
+            application/json: 
+              schema: 
+                $ref: '#/components/schemas/Error'
+        'default': 
+          description: Unxepected Error
+          content: 
+            application/json: 
+              schema: 
+                $ref: '#/components/schemas/Error'
+    put: 
+      tags: 
+        - user
+      operationId: updateOrCreateUser
+      summary: update or create one user
+      description: update an existing user or create a new one
+      security: 
+        - BearerAuth: []
+      requestBody: 
+        required: true
+        content: 
+          application/json: 
+            schema: 
+              $ref: '#/components/schemas/User'
+      responses: 
+        '200': 
+          description: update an existing user or create a new one
+          content: 
+            application/json: 
+              schema: 
+                $ref: '#/components/schemas/UserId'
+        '201': 
+          description: update an existing user or create a new one
+          content: 
+            application/json: 
+              schema: 
+                $ref: '#/components/schemas/UserId'
+        '202': 
+          description: update an existing user or create a new one
+        '400': 
+          description: Bad Request Error
+          content: 
+            application/json: 
+              schema: 
+                $ref: '#/components/schemas/Error'
+        '401': 
+          description: Unauthorized Error
+          content: 
+            application/json: 
+              schema: 
+                $ref: '#/components/schemas/Error'
+        '403': 
+          description: Forbidden Error
+          content: 
+            application/json: 
+              schema: 
+                $ref: '#/components/schemas/Error'
+        '406': 
+          description: Not Acceptable Error
+          content: 
+            application/json: 
+              schema: 
+                $ref: '#/components/schemas/Error'
+        '415': 
+          description: Unsupporrted Media Type Error
+          content: 
+            application/json: 
+              schema: 
+                $ref: '#/components/schemas/Error'
+        '429': 
+          description: Too Many Requests Error
+          content: 
+            application/json: 
+              schema: 
+                $ref: '#/components/schemas/Error'
+        '500': 
+          description: Internal Server Error
+          content: 
+            application/json: 
+              schema: 
+                $ref: '#/components/schemas/Error'
+        'default': 
+          description: Unxepected Error
+          content: 
+            application/json: 
+              schema: 
+                $ref: '#/components/schemas/Error'
+  '/users': 
+    get: 
+      tags: 
+        - user
+      operationId: getUsers
+      summary: get all users
+      description: retrieve a list of all users
+      security: 
+        - BearerAuth: []
+      parameters: 
+        - $ref: '#/components/parameters/searchForQueryParam'
+        - $ref: '#/components/parameters/orderByQueryParam'
+        - $ref: '#/components/parameters/paginationPageQueryParam'
+        - $ref: '#/components/parameters/paginationLimitQueryParam'
+        - $ref: '#/components/parameters/paginationLastQueryParam'
+        - $ref: '#/components/parameters/paginationTotalQueryParam'
+      responses: 
+        '200': 
+          description: retrieve a list of all users
+          content: 
+            application/json: 
+              schema: 
+                $ref: '#/components/schemas/GetUsersResponse'
+        '400': 
+          description: Bad Request Error
+          content: 
+            application/json: 
+              schema: 
+                $ref: '#/components/schemas/Error'
+        '401': 
+          description: Unauthorized Error
+          content: 
+            application/json: 
+              schema: 
+                $ref: '#/components/schemas/Error'
+        '403': 
+          description: Forbidden Error
+          content: 
+            application/json: 
+              schema: 
+                $ref: '#/components/schemas/Error'
+        '404': 
+          description: Not Found Error
+          content: 
+            application/json: 
+              schema: 
+                $ref: '#/components/schemas/Error'
+        '406': 
+          description: Not Acceptable Error
+          content: 
+            application/json: 
+              schema: 
+                $ref: '#/components/schemas/Error'
+        '429': 
+          description: Too Many Requests Error
+          content: 
+            application/json: 
+              schema: 
+                $ref: '#/components/schemas/Error'
+        '500': 
+          description: Internal Server Error
+          content: 
+            application/json: 
+              schema: 
+                $ref: '#/components/schemas/Error'
+        'default': 
+          description: Unxepected Error
+          content: 
+            application/json: 
+              schema: 
+                $ref: '#/components/schemas/Error'
+  '/users/{userId}': 
+    get: 
+      tags: 
+        - user
+      operationId: getUser
+      summary: get one user
+      description: get a certain user
+      security: 
+        - BearerAuth: []
+      parameters: 
+        - $ref: '#/components/parameters/userIdPathParam'
+      responses: 
+        '200': 
+          description: get a certain user
+          content: 
+            application/json: 
+              schema: 
+                $ref: '#/components/schemas/User'
+        '400': 
+          description: Bad Request Error
+          content: 
+            application/json: 
+              schema: 
+                $ref: '#/components/schemas/Error'
+        '401': 
+          description: Unauthorized Error
+          content: 
+            application/json: 
+              schema: 
+                $ref: '#/components/schemas/Error'
+        '403': 
+          description: Forbidden Error
+          content: 
+            application/json: 
+              schema: 
+                $ref: '#/components/schemas/Error'
+        '404': 
+          description: Not Found Error
+          content: 
+            application/json: 
+              schema: 
+                $ref: '#/components/schemas/Error'
+        '406': 
+          description: Not Acceptable Error
+          content: 
+            application/json: 
+              schema: 
+                $ref: '#/components/schemas/Error'
+        '429': 
+          description: Too Many Requests Error
+          content: 
+            application/json: 
+              schema: 
+                $ref: '#/components/schemas/Error'
+        '500': 
+          description: Internal Server Error
+          content: 
+            application/json: 
+              schema: 
+                $ref: '#/components/schemas/Error'
+        'default': 
+          description: Unxepected Error
+          content: 
+            application/json: 
+              schema: 
+                $ref: '#/components/schemas/Error'
+    patch: 
+      tags: 
+        - user
+      operationId: updateUser
+      summary: update one user
+      description: update a certain user
+      security: 
+        - BearerAuth: []
+      parameters: 
+        - $ref: '#/components/parameters/userIdPathParam'
+      requestBody: 
+        required: true
+        content: 
+          application/json: 
+            schema: 
+              $ref: '#/components/schemas/User'
+      responses: 
+        '200': 
+          description: update a certain user
+          content: 
+            application/json: 
+              schema: 
+                $ref: '#/components/schemas/UserId'
+        '202': 
+          description: update a certain user
+        '400': 
+          description: Bad Request Error
+          content: 
+            application/json: 
+              schema: 
+                $ref: '#/components/schemas/Error'
+        '401': 
+          description: Unauthorized Error
+          content: 
+            application/json: 
+              schema: 
+                $ref: '#/components/schemas/Error'
+        '403': 
+          description: Forbidden Error
+          content: 
+            application/json: 
+              schema: 
+                $ref: '#/components/schemas/Error'
+        '404': 
+          description: Not Found Error
+          content: 
+            application/json: 
+              schema: 
+                $ref: '#/components/schemas/Error'
+        '406': 
+          description: Not Acceptable Error
+          content: 
+            application/json: 
+              schema: 
+                $ref: '#/components/schemas/Error'
+        '415': 
+          description: Unsupporrted Media Type Error
+          content: 
+            application/json: 
+              schema: 
+                $ref: '#/components/schemas/Error'
+        '429': 
+          description: Too Many Requests Error
+          content: 
+            application/json: 
+              schema: 
+                $ref: '#/components/schemas/Error'
+        '500': 
+          description: Internal Server Error
+          content: 
+            application/json: 
+              schema: 
+                $ref: '#/components/schemas/Error'
+        'default': 
+          description: Unxepected Error
+          content: 
+            application/json: 
+              schema: 
+                $ref: '#/components/schemas/Error'
+    delete: 
+      tags: 
+        - user
+      operationId: deleteUser
+      summary: delete one user
+      description: delete a certain user
+      security: 
+        - BearerAuth: []
+      parameters: 
+        - $ref: '#/components/parameters/userIdPathParam'
+      responses: 
+        '200': 
+          description: delete a certain user
+        '400': 
+          description: Bad Request Error
+          content: 
+            application/json: 
+              schema: 
+                $ref: '#/components/schemas/Error'
+        '401': 
+          description: Unauthorized Error
+          content: 
+            application/json: 
+              schema: 
+                $ref: '#/components/schemas/Error'
+        '403': 
+          description: Forbidden Error
+          content: 
+            application/json: 
+              schema: 
+                $ref: '#/components/schemas/Error'
+        '404': 
+          description: Not Found Error
+          content: 
+            application/json: 
+              schema: 
+                $ref: '#/components/schemas/Error'
+        '406': 
+          description: Not Acceptable Error
+          content: 
+            application/json: 
+              schema: 
+                $ref: '#/components/schemas/Error'
+        '429': 
+          description: Too Many Requests Error
+          content: 
+            application/json: 
+              schema: 
+                $ref: '#/components/schemas/Error'
+        '500': 
+          description: Internal Server Error
+          content: 
+            application/json: 
+              schema: 
+                $ref: '#/components/schemas/Error'
+        'default': 
+          description: Unxepected Error
+          content: 
+            application/json: 
+              schema: 
+                $ref: '#/components/schemas/Error'

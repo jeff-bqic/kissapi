@@ -1,0 +1,262 @@
+{
+    use Data::Dumper::Concise;
+    use File::Slurp;
+    use KissApi::Globals;
+
+    $::RD_ERRORS = 1;
+    $::RD_WARN = 3;
+    $::RD_HINT = 1;
+
+    $::RD_AUTOACTION = q { $return = $#item == 1 ? { $item[0] => $item[1] } : { %item } };
+}
+
+startrule: 
+    <skip: qr{(?xs:
+          (?: \s+                       # Whitespace
+          |   /[*] (?:(?![*]/).)* [*]/  # Inline comment
+          |   // [^\n]* \n?             # End of line comment
+          )
+       )*}>
+    (Include | TypeDefinition)(s)
+    /\Z/
+    { $item[2] }
+
+TypeDefinition: TypeName Colon(?) Inheritance(?) TypeDescription(?) OpenBrace Property(s?) CloseBrace
+{
+    delete $item{CloseBrace};
+    delete $item{OpenBrace};
+    delete $item{'Colon(?)'};
+
+    $item{Parent} = $item{'Inheritance(?)'}[0]->{parent} || 'Class';
+    $item{Range} = $item{'Inheritance(?)'}[0]->{range};
+    delete $item{'Inheritance(?)'};
+
+    # delete magic Parse::RecDescent keys /__[A-Z0-9]+__/
+    delete $item{$_} foreach grep { /^__[A-Z0-9]+__$/ } keys %item;
+
+    $item{Properties} = {};
+    @{$item{AttributesOrder}} = () if $item{Parent} eq 'Class' || ! $BasicTypes->{$item{Parent}};
+
+    print "+++TypeName: <$item{TypeName}>\n" if $::debug > 2;
+    print "+++Parent: <$item{Parent}>\n" if $::debug > 2;
+    print "+++Properties:\n", Dumper(@{$item{'Property(s?)'}}) if $::debug > 2;
+
+    foreach my $prop (@{$item{'Property(s?)'}})
+    {
+        if ($prop->{TypeName})
+        {
+            if ($prop->{TypeName} =~ /^(.*)\?$/)
+            {
+                $prop->{TypeName} = $1;
+                $prop->{Optional} = 1;
+            }
+
+            push @{$item{AttributesOrder}}, $prop->{TypeName} if $item{Parent} eq 'Class' || ! $BasicTypes->{$item{Parent}};
+
+            $item{Properties}->{$prop->{TypeName}} = $prop;
+            delete $item{Properties}->{$prop->{TypeName}}->{TypeName};
+        }
+        else
+        {
+            push @{$item{AttributesOrder}}, (keys %$prop)[0] if $item{Parent} eq 'Class' || ! $BasicTypes->{$item{Parent}};
+            $item{Properties} = { %{$item{Properties}}, %$prop };
+        }
+    }
+    delete $item{'Property(s?)'};
+
+    $item{TypeDescription} = $item{'TypeDescription(?)'}[0]
+        if defined($item{'TypeDescription(?)'}[0]);
+    delete $item{'TypeDescription(?)'};
+
+    unless ($arg{is_recursive})
+    {
+        print STDERR "type parsed <$item{TypeName}>:\n", Dumper(\%item) if $::debug > 2;
+
+        $thisparser->{_type_library}->type(\%item);
+    }
+
+    $return = { %item };
+
+    1;
+}
+
+Inheritance: ParentTypeName Range(?)
+{
+    $return = { parent => $item{ParentTypeName}, range => $item{'Range(?)'}[0] };
+}
+
+TypeDescription: LowerThan /(\\>|[-!#$%&()*+.\/0-9:;<=?\@A-Z^_`\|~ \t])+/i GreaterThan
+{
+    $item[2] =~ s/\\>/>/g;
+
+    $return = $item[2];
+}
+
+Property: TypeDefinition[is_recursive => 1] | AttributeDefinition
+
+Range: OpenBracket Integer(?) (Dot Dot)(?) Integer(?) CloseBracket
+{
+    my ($min, $max) = ($item[2][0], $item[4][0]);
+
+    if ($item[3][0])
+    {
+        $min //= '-Infinite';
+        $max //= 'Infinite';
+    }
+    else
+    {
+        $max = $min;
+    }
+
+    $return = { min => $min, max => $max };
+}
+
+Comment: SingleLineComment(s) | MultiLineComment
+
+Include: '@include' /[<"]/ Filename /[>"]/
+{
+    $text = read_file($item[3]) . $text
+}
+
+Filename: /[^<>:;,?"*|]+/
+
+SingleLineComment: /[#]|\/\// /[^\n]*/
+
+MultiLineComment: '/*' m{((?! \*/ | /\* ).)*}sx '*/'
+
+AttributeDefinition: AttributeName Colon Value Comma(?)
+{
+    $return = { $item{AttributeName} => $item{Value} };
+}
+
+TypeName: /[a-z]\w*\??/i
+{
+    print "+++TypeName: $item[1]\n" if $::debug > 3;
+
+    $return = $item[1];
+}
+
+ParentTypeName: /[a-z]\w*/i
+
+AttributeName: /[a-z]\w*\??/i
+
+Value: Pattern | SingleQuotedString | DoubleQuotedString | EnumList | Integer | Number | Hash | Array | String
+
+KeyValuePair: Key ((Colon(?) Hash) | (Colon(?) Array) | (Colon AnyString))
+{
+    $return = { $item[1] => $item[3] };
+}
+
+Key: Identifier | SingleQuotedString | DoubleQuotedString
+
+Hash: OpenBrace KeyValuePair(s) CloseBrace
+{
+    print "/" x 80, "\nHash:\n\@item:\n", Dumper(\@item), "%item:\n", Dumper(\%item), "/" x 80, "\n" if $::debug > 2;
+
+    $return = $item[2];
+}
+
+Array: OpenBracket ArrayItem(s?) FinalArrayItem CloseBracket
+{
+    print "/" x 80, "\nArray:\n\@item:\n", Dumper(\@item), "%item:\n", Dumper(\%item), "/" x 80, "\n" if $::debug > 2;
+
+    $return = $item[2];
+}
+
+ArrayItem: FinalArrayItem Comma
+{
+    $return = $item[1];
+}
+
+FinalArrayItem: KeyValuePair | Hash | Array | AnyString
+
+Pattern: Slash /(\\\/|[^\/])+/ Slash IModifier(?)
+{
+    $return = join "", @item[1..$#item - 1], $item[$#item][0];
+}
+
+IModifier: 'i'
+
+AnyString: SingleQuotedString | DoubleQuotedString | String
+
+String: <skip: '\s*'> /[-!#$%&()*+.\/0-9:;<=>?\@A-Z^_`\|~ \t]+/i
+{
+    $item[2] =~ s/[,\s]*$//;
+
+    $return = $item[2];
+}
+
+SingleQuotedString: SingleQuote /(\\'|\n|[^'])*/ SingleQuote
+{
+    $return = $item[2];
+}
+
+DoubleQuotedString: DoubleQuote /(\\"|\n|[^"])*/ DoubleQuote
+{
+    $return = $item[2];
+}
+
+EnumList: OpenBracket ListEntry(s) CloseBracket
+{
+    $return = $item[2];
+}
+
+ListEntry: (Number | Identifier) Comma(?)
+{
+    $return = $item[1];
+}
+
+Identifier: /[a-z][a-z0-9_]*/i
+
+Integer: /[-+]?(\d+|Infinite)/ <reject: $item[1] eq ''>
+{
+    $return = $item[1];
+}
+
+Number: /[+-]?((\d*(.\d+)?)|Infinite)/ <reject: $item[1] eq ''>
+{
+    $return = $item[1];
+}
+
+Min: Integer(?) Dot Dot
+{
+    $return = $item[1];
+}
+
+Max: Integer
+
+NewLine: "\n"
+
+Slash: '/'
+
+At: '@'
+
+Dot: '.'
+
+Colon: ':'
+
+Comma: ','
+
+DoubleQuote: '"'
+
+SingleQuote: /'/
+
+OpenBracket: '['
+
+CloseBracket: ']'
+
+OpenBrace: '{'
+
+CloseBrace: '}'
+
+LowerThan: '<'
+
+GreaterThan: '>'
+
+Minus: '-'
+
+Plus: '+'
+
+Equals: '='
+
+EOF: /^\Z/

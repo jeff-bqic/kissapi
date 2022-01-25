@@ -1,0 +1,43 @@
+    @types <types/simple_types.kapi>
+    @types <types/class_types.kapi>
+
+    api: VerySimple
+    {
+        prolog
+        {
+            kissapi: 1.0
+            title: Very Simple API
+            version: 1.0
+
+            license:
+            {
+                name: Copyright by kissapi
+                url: https://www.kissapi.de/
+            }
+
+            contact:
+            {
+                name: Hugo Hacker
+                email: hugohacker@kissapi.de
+            }
+
+            description: 'My Very Simple API'
+
+            servers
+            [
+                'https://api.kissapi.de/api/v1',
+                'https://verysimple.api.kissapi.de/api/v1'
+                'https://127.0.0.1/verysimpleapi/v1'
+            ]
+        }
+
+        user
+        {
+            description: my simple user service
+
+            security: [ bearer ]
+
+            {user} {}
+        }
+    }
+

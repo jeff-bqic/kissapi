@@ -1,0 +1,1864 @@
+openapi: 3.0.2
+info:
+  title: Test API
+  version: '1.0'
+  license:
+    name: Copyright by jeff
+    url: 'https://www.bitscon.biz'
+  contact:
+    name: Jeff
+    email: jeff@bitscon.biz
+  description: |
+    some CommonMark description
+servers:
+  - url: 'https://api.bitscon.biz/api/v1'
+  - url: 'https://test.api.bitscon.biz/api/v1'
+components:
+  securitySchemes:
+    BearerAuth:
+      bearerFormat: JWT
+      scheme: bearer
+      type: http
+    apiKey:
+      in: header
+      name: X-API-KEY
+      type: apiKey
+    appId:
+      in: cookie
+      name: X-APP-ID
+      type: apiKey
+    basicAuth:
+      scheme: basic
+      type: http
+    bearerAuth2:
+      bearerFormat: UUID
+      scheme: bearer
+      type: http
+  responses:
+    400Error:
+      description: Bad Request Error
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    401Error:
+      description: Unauthorized Error
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    403Error:
+      description: Forbidden Error
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    404Error:
+      description: Not Found Error
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    406Error:
+      description: Not Acceptable Error
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    429Error:
+      description: Too Many Requests Error
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    500Error:
+      description: Internal Server Error
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    503Error:
+      description: Service Unavailable Error
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    defaultError:
+      description: Unxepected Error
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+  parameters:
+    sessionIdHeaderParam:
+      name: X-SESSION-ID
+      description: the session ID
+      in: header
+      required: false
+      schema:
+        type: string
+        maxLength: 36
+        pattern: '^[0-9A-Fa-f]{8}(?:-[0-9A-Fa-f]{4}){3}-[0-9A-Fa-f]{12}$'
+        format: uuid
+    sessionId1HeaderParam:
+      name: X-SESSION-ID1
+      in: header
+      required: false
+      schema:
+        $ref: '#/components/schemas/SessionId'
+    sessionId2HeaderParam:
+      name: X-SESSION-ID2
+      in: header
+      required: false
+      schema:
+        $ref: '#/components/schemas/SessionId'
+    accountIdPathParam:
+      name: accountId
+      in: path
+      required: true
+      schema:
+        $ref: '#/components/schemas/AccountId'
+    documentIdPathParam:
+      name: documentId
+      in: path
+      required: true
+      schema:
+        $ref: '#/components/schemas/DocumentId'
+    personIdPathParam:
+      name: personId
+      in: path
+      required: true
+      schema:
+        $ref: '#/components/schemas/PersonId'
+    transactionIdPathParam:
+      name: transactionId
+      in: path
+      required: true
+      schema:
+        $ref: '#/components/schemas/TransactionId'
+    userIdPathParam:
+      name: userId
+      in: path
+      required: true
+      schema:
+        $ref: '#/components/schemas/UserId'
+    accountTypeQueryParam:
+      name: accountType
+      in: query
+      required: false
+      schema:
+        $ref: '#/components/schemas/AccountType'
+    documentIdQueryParam:
+      name: documentId
+      in: query
+      required: false
+      schema:
+        type: string
+    orderByQueryParam:
+      name: orderBy
+      in: query
+      required: false
+      schema:
+        $ref: '#/components/schemas/OrderBy'
+    paginationLastQueryParam:
+      name: paginationLast
+      in: query
+      required: false
+      schema:
+        $ref: '#/components/schemas/PaginationLast'
+    paginationLimitQueryParam:
+      name: paginationLimit
+      in: query
+      required: false
+      schema:
+        $ref: '#/components/schemas/PaginationLimit'
+    paginationPageQueryParam:
+      name: paginationPage
+      in: query
+      required: false
+      schema:
+        $ref: '#/components/schemas/PaginationPage'
+    paginationTotalQueryParam:
+      name: paginationTotal
+      in: query
+      required: false
+      schema:
+        $ref: '#/components/schemas/PaginationTotal'
+    searchForQueryParam:
+      name: searchFor
+      in: query
+      required: false
+      schema:
+        $ref: '#/components/schemas/SearchFor'
+    userIdQueryParam:
+      name: userId
+      description: the user id
+      in: query
+      required: false
+      schema:
+        $ref: '#/components/schemas/UserId'
+  schemas:
+    AccountId:
+      title: AccountId
+      description: the unique ID of the accountId
+      example: 0ec9c820-6d26-4c66-a7d6-3953a6d773fb
+      type: string
+      pattern: '^[0-9A-Fa-f]{8}(?:-[0-9A-Fa-f]{4}){3}-[0-9A-Fa-f]{12}$'
+    AccountType:
+      title: AccountType
+      description: the type of the account
+      example: IBAN
+      type: string
+      enum:
+        - IBAN
+        - OTHER
+    CreateDocumentRequest:
+      title: CreateDocumentRequest
+      type: object
+      additionalProperties: false
+      properties:
+        type:
+          title: DocumentType
+          description: the type of a document
+          example: CONTRACT
+          type: string
+          minLength: 1
+          maxLength: 50
+        file:
+          title: File
+          description: a file
+          example: asdsadsf
+          type: string
+          format: binary
+      required:
+        - file
+    CreateDocumentResponse:
+      title: CreateDocumentResponse
+      type: object
+      additionalProperties: false
+      properties:
+        id:
+          title: DocumentId
+          description: an UUID
+          example: 20241de7-8895-4668-86d5-0c1e552e2e06
+          type: string
+          pattern: '^[0-9A-Fa-f]{8}(?:-[0-9A-Fa-f]{4}){3}-[0-9A-Fa-f]{12}$'
+        type:
+          title: DocumentType
+          description: the type of a document
+          example: CONTRACT
+          type: string
+          minLength: 1
+          maxLength: 50
+      required:
+        - id
+        - type
+    Document:
+      title: Document
+      type: object
+      additionalProperties: false
+      properties:
+        file:
+          title: File
+          description: a file
+          example: asdsadsf
+          type: string
+          format: binary
+        type:
+          title: DocumentType
+          description: the type of a document
+          example: CONTRACT
+          type: string
+          minLength: 1
+          maxLength: 50
+      required:
+        - file
+        - type
+    DocumentId:
+      title: DocumentId
+      description: an UUID
+      example: 20241de7-8895-4668-86d5-0c1e552e2e06
+      type: string
+      pattern: '''^[0-9A-Fa-f]{8}(?:-[0-9A-Fa-f]{4}){3}-[0-9A-Fa-f]{12}$'''
+    DocumentType:
+      title: DocumentType
+      description: the type of a document
+      example: CONTRACT
+      type: string
+      minLength: 1
+      maxLength: 50
+    Documents:
+      title: Documents
+      type: array
+      minItems: 0
+      maxItems: 500
+      uniqueItems: true
+      items:
+        $ref: '#/components/schemas/Document'
+    Email:
+      title: Email
+      description: an e-mail address
+      example: hugo@hacker.com
+      type: string
+      pattern: >-
+        ^[A-Za-z0-9!#'$%&*+\/=?^_‘\{\|\}~-]+(?:\.[A-Za-z0-9!#'$%&*+\/=?^_‘{|}~-]+)*@(?:[A-Za-z0-9](?:[A-Za-z0-9-]*[A-Za-z0-9])?\.)+[A-Za-z0-9](?:[A-Za-z0-9-]*[A-Za-z0-9])?$
+    Error:
+      title: Error
+      type: object
+      additionalProperties: false
+      properties: null
+      required:
+        - message
+        - name
+        - domain
+        - code
+    File:
+      title: File
+      description: a file
+      example: asdsadsf
+      type: string
+      format: binary
+    Gender:
+      title: Gender
+      description: the gender of a person
+      example: FEMALE
+      type: string
+      enum:
+        - FEMALE
+        - MALE
+        - OTHER
+    GetDocumentsResponse:
+      title: GetDocumentsResponse
+      type: object
+      additionalProperties: false
+      properties:
+        documents:
+          title: Documents
+          type: array
+          minItems: 0
+          maxItems: 500
+          uniqueItems: true
+          items:
+            $ref: '#/components/schemas/Document'
+        pagination:
+          title: Pagination
+          type: object
+          additionalProperties: false
+          properties:
+            page:
+              title: PaginationPage
+              description: the current page of the pagination
+              example: 4
+              $ref: '#/components/schemas/NonNegativeInt'
+            total:
+              title: PaginationTotal
+              description: the total of entries of a pagination
+              example: 1024
+              $ref: '#/components/schemas/NonNegativeInt'
+            limit:
+              title: PaginationLimit
+              description: the maximum number of entries per page
+              example: 20
+              $ref: '#/components/schemas/NonNegativeInt'
+            last:
+              title: PaginationLast
+              description: the last page of a pagination
+              example: 13
+              $ref: '#/components/schemas/NonNegativeInt'
+          required:
+            - page
+            - total
+            - limit
+            - last
+      required:
+        - documents
+        - pagination
+    GetUserBarAccountBorTransactionsResponse:
+      title: GetUserBarAccountBorTransactionsResponse
+      type: object
+      additionalProperties: false
+      properties:
+        pagination:
+          title: Pagination
+          type: object
+          additionalProperties: false
+          properties:
+            page:
+              title: PaginationPage
+              description: the current page of the pagination
+              example: 4
+              $ref: '#/components/schemas/NonNegativeInt'
+            total:
+              title: PaginationTotal
+              description: the total of entries of a pagination
+              example: 1024
+              $ref: '#/components/schemas/NonNegativeInt'
+            limit:
+              title: PaginationLimit
+              description: the maximum number of entries per page
+              example: 20
+              $ref: '#/components/schemas/NonNegativeInt'
+            last:
+              title: PaginationLast
+              description: the last page of a pagination
+              example: 13
+              $ref: '#/components/schemas/NonNegativeInt'
+          required:
+            - page
+            - total
+            - limit
+            - last
+        userBarAccountBorTransactions:
+          title: UserBarAccountBorTransactions
+          type: array
+          minItems: 0
+          maxItems: 500
+          items:
+            $ref: '#/components/schemas/UserBarAccountBorTransaction'
+      required:
+        - pagination
+        - userBarAccountBorTransactions
+    GetUserBarAccountsResponse:
+      title: GetUserBarAccountsResponse
+      type: object
+      additionalProperties: false
+      properties:
+        userBarAccounts:
+          title: UserBarAccounts
+          type: array
+          minItems: 0
+          maxItems: 500
+          items:
+            $ref: '#/components/schemas/UserBarAccount'
+      required:
+        - userBarAccounts
+    GetUsersResponse:
+      title: GetUsersResponse
+      type: object
+      additionalProperties: false
+      properties:
+        pagination:
+          title: Pagination
+          type: object
+          additionalProperties: false
+          properties:
+            page:
+              title: PaginationPage
+              description: the current page of the pagination
+              example: 4
+              $ref: '#/components/schemas/NonNegativeInt'
+            total:
+              title: PaginationTotal
+              description: the total of entries of a pagination
+              example: 1024
+              $ref: '#/components/schemas/NonNegativeInt'
+            limit:
+              title: PaginationLimit
+              description: the maximum number of entries per page
+              example: 20
+              $ref: '#/components/schemas/NonNegativeInt'
+            last:
+              title: PaginationLast
+              description: the last page of a pagination
+              example: 13
+              $ref: '#/components/schemas/NonNegativeInt'
+          required:
+            - page
+            - total
+            - limit
+            - last
+        users:
+          title: Users
+          type: array
+          minItems: 0
+          maxItems: 500
+          items:
+            $ref: '#/components/schemas/User'
+      required:
+        - pagination
+        - users
+    Language:
+      title: Language
+      description: ISO 639-1 alpha2 language code
+      example: EN
+      type: string
+      minLength: 2
+      maxLength: 2
+    NonNegativeInt:
+      title: NonNegativeInt
+      description: a natural number (integer greater or equal zero)
+      example: 0
+      type: integer
+      format: int64
+      minimum: 0
+    OrderBy:
+      title: OrderBy
+      description: >
+        string with a comma separated list of sort criteria  composed of a name
+        direction pair like "field:asc|desc" where "asc" is the default
+        direction
+      example: 'name:desc,created'
+      type: string
+      minLength: 255
+      maxLength: 255
+    Pagination:
+      title: Pagination
+      type: object
+      additionalProperties: false
+      properties:
+        page:
+          title: PaginationPage
+          description: the current page of the pagination
+          example: 4
+          $ref: '#/components/schemas/NonNegativeInt'
+        total:
+          title: PaginationTotal
+          description: the total of entries of a pagination
+          example: 1024
+          $ref: '#/components/schemas/NonNegativeInt'
+        limit:
+          title: PaginationLimit
+          description: the maximum number of entries per page
+          example: 20
+          $ref: '#/components/schemas/NonNegativeInt'
+        last:
+          title: PaginationLast
+          description: the last page of a pagination
+          example: 13
+          $ref: '#/components/schemas/NonNegativeInt'
+      required:
+        - page
+        - total
+        - limit
+        - last
+    PaginationLast:
+      title: PaginationLast
+      description: the last page of a pagination
+      example: 13
+      $ref: '#/components/schemas/NonNegativeInt'
+    PaginationLimit:
+      title: PaginationLimit
+      description: the maximum number of entries per page
+      example: 20
+      $ref: '#/components/schemas/NonNegativeInt'
+    PaginationPage:
+      title: PaginationPage
+      description: the current page of the pagination
+      example: 4
+      $ref: '#/components/schemas/NonNegativeInt'
+    PaginationTotal:
+      title: PaginationTotal
+      description: the total of entries of a pagination
+      example: 1024
+      $ref: '#/components/schemas/NonNegativeInt'
+    Person:
+      title: null
+      type: object
+      additionalProperties: false
+      properties:
+        gender:
+          title: Gender
+          description: the gender of a person
+          example: FEMALE
+          type: string
+          enum:
+            - FEMALE
+            - MALE
+            - OTHER
+        email:
+          title: Email
+          description: an e-mail address
+          example: hugo@hacker.com
+          type: string
+          pattern: >-
+            '^[A-Za-z0-9!#''$%&*+\/=?^_‘\{\|\}~-]+(?:\.[A-Za-z0-9!#''$%&*+\/=?^_‘{|}~-]+)*@(?:[A-Za-z0-9](?:[A-Za-z0-9-]*[A-Za-z0-9])?\.)+[A-Za-z0-9](?:[A-Za-z0-9-]*[A-Za-z0-9])?$'
+        language:
+          title: Language
+          description: ISO 639-1 alpha2 language code
+          example: EN
+          type: string
+          minLength: 2
+          maxLength: 2
+        phone:
+          title: PhoneNumber
+          description: a phone number
+          example: +49 345 - 974 5839
+          type: string
+          minLength: 20
+          maxLength: 20
+          pattern: '^[\+]?[(]?[0-9]{0,4}[)]?[-\s\.]?[0-9-\s]+$'
+      required:
+        - lastName
+        - title
+        - gender
+        - email
+        - middleName
+        - salutation
+        - firstName
+        - date_of_birth
+        - language
+        - phone
+    PersonId:
+      title: PersonId
+      description: an UUID
+      example: b2a84c79-506e-4dee-ace9-22cdab2cd1ac
+      type: string
+      pattern: '^[0-9A-Fa-f]{8}(?:-[0-9A-Fa-f]{4}){3}-[0-9A-Fa-f]{12}$'
+    PhoneNumber:
+      title: PhoneNumber
+      description: a phone number
+      example: +49 345 - 974 5839
+      type: string
+      minLength: 20
+      maxLength: 20
+      pattern: '''^[\+]?[(]?[0-9]{0,4}[)]?[-\s\.]?[0-9-\s]+$'''
+    SearchFor:
+      title: SearchFor
+      description: a comma separated list of search criteria
+      example: 'name=B%,active=1'
+      type: string
+      minLength: 255
+      maxLength: 255
+    SessionId:
+      title: SessionId
+      description: the unique ID of a session
+      example: c8557f1d-e32f-4caf-8425-537617b9f0d4
+      type: string
+      pattern: '^[0-9A-Fa-f]{8}(?:-[0-9A-Fa-f]{4}){3}-[0-9A-Fa-f]{12}$'
+    TransactionId:
+      title: TransactionId
+      description: the unique ID of the transactionId
+      example: 4098174f-4c77-4595-b829-fc045a925f9b
+      type: string
+      pattern: '^[0-9A-Fa-f]{8}(?:-[0-9A-Fa-f]{4}){3}-[0-9A-Fa-f]{12}$'
+    UUID:
+      title: UUID
+      description: an UUID
+      example: cdb7915d-41cb-45b7-948e-b62205dff2f9
+      type: string
+      minLength: 36
+      maxLength: 36
+      pattern: '^[0-9A-Fa-f]{8}(?:-[0-9A-Fa-f]{4}){3}-[0-9A-Fa-f]{12}$'
+    User:
+      title: User
+      type: object
+      additionalProperties: false
+      properties:
+        failedLogins:
+          title: NonNegativeInt
+          description: a natural number (integer greater or equal zero)
+          example: 0
+          type: integer
+          format: int64
+          minimum: 0
+        language:
+          title: Language
+          description: ISO 639-1 alpha2 language code
+          example: EN
+          type: string
+          minLength: 2
+          maxLength: 2
+        person:
+          title: null
+          type: object
+          additionalProperties: false
+          properties:
+            gender:
+              title: Gender
+              description: the gender of a person
+              example: FEMALE
+              type: string
+              enum:
+                - FEMALE
+                - MALE
+                - OTHER
+            email:
+              title: Email
+              description: an e-mail address
+              example: hugo@hacker.com
+              type: string
+              pattern: >-
+                '''^[A-Za-z0-9!#''''$%&*+\/=?^_‘\{\|\}~-]+(?:\.[A-Za-z0-9!#''''$%&*+\/=?^_‘{|}~-]+)*@(?:[A-Za-z0-9](?:[A-Za-z0-9-]*[A-Za-z0-9])?\.)+[A-Za-z0-9](?:[A-Za-z0-9-]*[A-Za-z0-9])?$'''
+            language:
+              title: Language
+              description: ISO 639-1 alpha2 language code
+              example: EN
+              type: string
+              minLength: 2
+              maxLength: 2
+            phone:
+              title: PhoneNumber
+              description: a phone number
+              example: +49 345 - 974 5839
+              type: string
+              minLength: 20
+              maxLength: 20
+              pattern: '''''''^[\+]?[(]?[0-9]{0,4}[)]?[-\s\.]?[0-9-\s]+$'''''''
+          required:
+            - lastName
+            - title
+            - gender
+            - email
+            - middleName
+            - salutation
+            - firstName
+            - date_of_birth
+            - language
+            - phone
+        id:
+          title: UUID
+          description: an UUID
+          example: cdb7915d-41cb-45b7-948e-b62205dff2f9
+          type: string
+          minLength: 36
+          maxLength: 36
+          pattern: '''^[0-9A-Fa-f]{8}(?:-[0-9A-Fa-f]{4}){3}-[0-9A-Fa-f]{12}$'''
+      required:
+        - login
+    UserBarAccount:
+      title: UserBarAccount
+      type: object
+      additionalProperties: false
+      properties: null
+      required:
+        - firstName
+        - lastName
+    UserBarAccountBorTransaction:
+      title: UserBarAccountBorTransaction
+      type: object
+      additionalProperties: false
+      properties: null
+      required:
+        - lastName
+        - firstName
+    UserBarAccountBorTransactionId:
+      title: UserBarAccountBorTransactionId
+      description: an UUID
+      example: 3b79bd9b-3c88-42e9-a426-e48629678659
+      type: string
+      pattern: '^[0-9A-Fa-f]{8}(?:-[0-9A-Fa-f]{4}){3}-[0-9A-Fa-f]{12}$'
+    UserBarAccountBorTransactions:
+      title: UserBarAccountBorTransactions
+      type: array
+      minItems: 0
+      maxItems: 500
+      items:
+        $ref: '#/components/schemas/UserBarAccountBorTransaction'
+    UserBarAccountId:
+      title: UserBarAccountId
+      description: an UUID
+      example: 95228875-7dbf-4eee-bde4-8237c78e4f0b
+      type: string
+      pattern: '^[0-9A-Fa-f]{8}(?:-[0-9A-Fa-f]{4}){3}-[0-9A-Fa-f]{12}$'
+    UserBarAccounts:
+      title: UserBarAccounts
+      type: array
+      minItems: 0
+      maxItems: 500
+      items:
+        $ref: '#/components/schemas/UserBarAccount'
+    UserId:
+      title: UserId
+      description: the unique ID of the userId
+      example: 1a8526af-c9d7-4767-aa9b-fa6cc2aa0de9
+      type: string
+      pattern: '^[0-9A-Fa-f]{8}(?:-[0-9A-Fa-f]{4}){3}-[0-9A-Fa-f]{12}$'
+    Users:
+      title: Users
+      type: array
+      minItems: 0
+      maxItems: 500
+      items:
+        $ref: '#/components/schemas/User'
+tags:
+  - name: documents
+    description: |
+      the multiline description of  the documents service
+  - name: entities
+    description: |
+      the multiline description of  the entitiy service
+paths:
+  /document:
+    post:
+      tags:
+        - documents
+      operationId: createDocument
+      summary: create one document
+      description: create a new document
+      security:
+        - 'BearerAuth []'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateDocumentRequest'
+      responses:
+        '200':
+          $ref: '#/components/schemas/CreateDocumentResponse'
+        '201':
+          $ref: '#/components/schemas/CreateDocumentResponse'
+        '202':
+          description: OK
+        '400':
+          $ref: '#/components/responses/400Error'
+        '401':
+          $ref: '#/components/responses/401Error'
+        '403':
+          $ref: '#/components/responses/403Error'
+        '406':
+          $ref: '#/components/responses/406Error'
+        '429':
+          $ref: '#/components/responses/429Error'
+        '500':
+          $ref: '#/components/responses/500Error'
+        default:
+          $ref: '#/components/responses/defaultError'
+    put:
+      tags:
+        - documents
+      operationId: updateOrCreateDocument
+      summary: update or create one document
+      description: update an existing document or create a new one
+      security:
+        - 'BearerAuth []'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Document'
+      responses:
+        '200':
+          description: the document ID
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DocumentId'
+        '201':
+          description: the document ID
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DocumentId'
+        '202':
+          description: OK
+        '400':
+          $ref: '#/components/responses/400Error'
+        '401':
+          $ref: '#/components/responses/401Error'
+        '403':
+          $ref: '#/components/responses/403Error'
+        '406':
+          $ref: '#/components/responses/406Error'
+        '429':
+          $ref: '#/components/responses/429Error'
+        '500':
+          $ref: '#/components/responses/500Error'
+        default:
+          $ref: '#/components/responses/defaultError'
+  /documents:
+    get:
+      tags:
+        - documents
+      operationId: getDocuments
+      summary: get all documents
+      description: retrieve a list of all documents
+      security:
+        - 'BearerAuth []'
+      parameters:
+        - $ref: '#/components/parameters/orderByQueryParam'
+        - $ref: '#/components/parameters/searchForQueryParam'
+        - $ref: '#/components/parameters/paginationPageQueryParam'
+        - $ref: '#/components/parameters/paginationLimitQueryParam'
+        - $ref: '#/components/parameters/paginationLastQueryParam'
+        - $ref: '#/components/parameters/paginationTotalQueryParam'
+      responses:
+        '200':
+          $ref: '#/components/schemas/GetDocumentsResponse'
+        '400':
+          $ref: '#/components/responses/400Error'
+        '401':
+          $ref: '#/components/responses/401Error'
+        '403':
+          $ref: '#/components/responses/403Error'
+        '404':
+          $ref: '#/components/responses/404Error'
+        '406':
+          $ref: '#/components/responses/406Error'
+        '429':
+          $ref: '#/components/responses/429Error'
+        '500':
+          $ref: '#/components/responses/500Error'
+        default:
+          $ref: '#/components/responses/defaultError'
+  '/documents/{documentId}':
+    get:
+      tags:
+        - documents
+      operationId: getDocument
+      summary: get one document
+      description: get a certain document
+      security:
+        - 'BearerAuth []'
+      parameters:
+        - $ref: '#/components/parameters/documentIdPathParam'
+      responses:
+        '200':
+          description: the document
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Document'
+        '400':
+          $ref: '#/components/responses/400Error'
+        '401':
+          $ref: '#/components/responses/401Error'
+        '403':
+          $ref: '#/components/responses/403Error'
+        '404':
+          $ref: '#/components/responses/404Error'
+        '406':
+          $ref: '#/components/responses/406Error'
+        '429':
+          $ref: '#/components/responses/429Error'
+        '500':
+          $ref: '#/components/responses/500Error'
+        default:
+          $ref: '#/components/responses/defaultError'
+    patch:
+      tags:
+        - documents
+      operationId: updateDocument
+      summary: update one document
+      description: update a certain document
+      security:
+        - 'BearerAuth []'
+      parameters:
+        - $ref: '#/components/parameters/documentIdPathParam'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Document'
+      responses:
+        '200':
+          description: the document ID
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DocumentId'
+        '202':
+          description: OK
+        '400':
+          $ref: '#/components/responses/400Error'
+        '401':
+          $ref: '#/components/responses/401Error'
+        '403':
+          $ref: '#/components/responses/403Error'
+        '404':
+          $ref: '#/components/responses/404Error'
+        '406':
+          $ref: '#/components/responses/406Error'
+        '429':
+          $ref: '#/components/responses/429Error'
+        '500':
+          $ref: '#/components/responses/500Error'
+        default:
+          $ref: '#/components/responses/defaultError'
+    delete:
+      tags:
+        - documents
+      operationId: deleteDocument
+      summary: delete one document
+      description: delete a certain document
+      security:
+        - 'BearerAuth []'
+      parameters:
+        - $ref: '#/components/parameters/documentIdPathParam'
+      responses:
+        '200':
+          description: OK
+        '400':
+          $ref: '#/components/responses/400Error'
+        '401':
+          $ref: '#/components/responses/401Error'
+        '403':
+          $ref: '#/components/responses/403Error'
+        '404':
+          $ref: '#/components/responses/404Error'
+        '406':
+          $ref: '#/components/responses/406Error'
+        '429':
+          $ref: '#/components/responses/429Error'
+        '500':
+          $ref: '#/components/responses/500Error'
+        default:
+          $ref: '#/components/responses/defaultError'
+  /bla/blu/user:
+    post:
+      tags:
+        - entities
+      operationId: createUser
+      summary: create new user
+      description: create a new user
+      security:
+        - 'basicAuth []'
+        - 'apiKey []'
+        - 'appId []'
+        - 'BearerAuth []'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/User'
+      responses:
+        '200':
+          description: the user ID
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserId'
+        '400':
+          $ref: '#/components/responses/400Error'
+        '401':
+          $ref: '#/components/responses/401Error'
+        '403':
+          $ref: '#/components/responses/403Error'
+        '406':
+          $ref: '#/components/responses/406Error'
+        '500':
+          $ref: '#/components/responses/500Error'
+    put:
+      tags:
+        - entities
+      operationId: updateOrCreateUser
+      summary: update or create one user
+      description: update an existing user or create a new one
+      security:
+        - 'basicAuth []'
+        - 'apiKey []'
+        - 'appId []'
+        - 'BearerAuth []'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/User'
+      responses:
+        '200':
+          description: the user ID
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserId'
+        '201':
+          description: the user ID
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserId'
+        '202':
+          description: OK
+        '400':
+          $ref: '#/components/responses/400Error'
+        '401':
+          $ref: '#/components/responses/401Error'
+        '403':
+          $ref: '#/components/responses/403Error'
+        '406':
+          $ref: '#/components/responses/406Error'
+        '429':
+          $ref: '#/components/responses/429Error'
+        '500':
+          $ref: '#/components/responses/500Error'
+        default:
+          $ref: '#/components/responses/defaultError'
+  /bla/blu/users:
+    get:
+      tags:
+        - entities
+      operationId: getUsers
+      summary: list of users
+      description: returns a list of users
+      security:
+        - 'basicAuth []'
+        - 'apiKey []'
+        - 'appId []'
+        - 'BearerAuth []'
+      parameters:
+        - $ref: '#/components/parameters/searchForQueryParam'
+        - $ref: '#/components/parameters/paginationPageQueryParam'
+        - $ref: '#/components/parameters/paginationLimitQueryParam'
+        - $ref: '#/components/parameters/paginationLastQueryParam'
+        - $ref: '#/components/parameters/paginationTotalQueryParam'
+      responses:
+        '200':
+          $ref: '#/components/schemas/GetUsersResponse'
+        '400':
+          $ref: '#/components/responses/400Error'
+        '401':
+          $ref: '#/components/responses/401Error'
+        '403':
+          $ref: '#/components/responses/403Error'
+        '404':
+          $ref: '#/components/responses/404Error'
+        '406':
+          $ref: '#/components/responses/406Error'
+        '429':
+          $ref: '#/components/responses/429Error'
+        '500':
+          $ref: '#/components/responses/500Error'
+        default:
+          $ref: '#/components/responses/defaultError'
+  '/bla/blu/users/{userId}':
+    get:
+      tags:
+        - entities
+      operationId: getUser
+      summary: get one user
+      description: get a certain user
+      security:
+        - 'basicAuth []'
+        - 'apiKey []'
+        - 'appId []'
+        - 'BearerAuth []'
+      parameters:
+        - $ref: '#/components/parameters/userIdPathParam'
+      responses:
+        '200':
+          description: the user
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '400':
+          $ref: '#/components/responses/400Error'
+        '401':
+          $ref: '#/components/responses/401Error'
+        '403':
+          $ref: '#/components/responses/403Error'
+        '404':
+          $ref: '#/components/responses/404Error'
+        '406':
+          $ref: '#/components/responses/406Error'
+        '429':
+          $ref: '#/components/responses/429Error'
+        '500':
+          $ref: '#/components/responses/500Error'
+        default:
+          $ref: '#/components/responses/defaultError'
+    patch:
+      tags:
+        - entities
+      operationId: updateUser
+      summary: update one user
+      description: update a certain user
+      security:
+        - 'basicAuth []'
+        - 'apiKey []'
+        - 'appId []'
+        - 'BearerAuth []'
+      parameters:
+        - $ref: '#/components/parameters/userIdPathParam'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/User'
+      responses:
+        '200':
+          description: the user ID
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserId'
+        '202':
+          description: OK
+        '400':
+          $ref: '#/components/responses/400Error'
+        '401':
+          $ref: '#/components/responses/401Error'
+        '403':
+          $ref: '#/components/responses/403Error'
+        '404':
+          $ref: '#/components/responses/404Error'
+        '406':
+          $ref: '#/components/responses/406Error'
+        '429':
+          $ref: '#/components/responses/429Error'
+        '500':
+          $ref: '#/components/responses/500Error'
+        default:
+          $ref: '#/components/responses/defaultError'
+    delete:
+      tags:
+        - entities
+      operationId: deleteUser
+      summary: delete one user
+      description: delete a certain user
+      security:
+        - 'basicAuth []'
+        - 'apiKey []'
+        - 'appId []'
+        - 'BearerAuth []'
+      parameters:
+        - $ref: '#/components/parameters/userIdPathParam'
+      responses:
+        '200':
+          description: OK
+        '400':
+          $ref: '#/components/responses/400Error'
+        '401':
+          $ref: '#/components/responses/401Error'
+        '403':
+          $ref: '#/components/responses/403Error'
+        '404':
+          $ref: '#/components/responses/404Error'
+        '406':
+          $ref: '#/components/responses/406Error'
+        '429':
+          $ref: '#/components/responses/429Error'
+        '500':
+          $ref: '#/components/responses/500Error'
+        default:
+          $ref: '#/components/responses/defaultError'
+  /blubber/person/blo:
+    post:
+      tags:
+        - entities
+      operationId: createPerson
+      summary: create one person
+      description: create a new person
+      security:
+        - 'bearerAuth2 []'
+        - 'BearerAuth []'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Person'
+      responses:
+        '200':
+          description: the person ID
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PersonId'
+        '201':
+          description: the person ID
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PersonId'
+        '202':
+          description: OK
+        '400':
+          $ref: '#/components/responses/400Error'
+        '401':
+          $ref: '#/components/responses/401Error'
+        '403':
+          $ref: '#/components/responses/403Error'
+        '406':
+          $ref: '#/components/responses/406Error'
+        '429':
+          $ref: '#/components/responses/429Error'
+        '500':
+          $ref: '#/components/responses/500Error'
+        default:
+          $ref: '#/components/responses/defaultError'
+    put:
+      tags:
+        - entities
+      operationId: updateOrCreatePerson
+      summary: update or create one person
+      description: update an existing person or create a new one
+      security:
+        - 'bearerAuth2 []'
+        - 'BearerAuth []'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Person'
+      responses:
+        '200':
+          description: the person ID
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PersonId'
+        '201':
+          description: the person ID
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PersonId'
+        '202':
+          description: OK
+        '400':
+          $ref: '#/components/responses/400Error'
+        '401':
+          $ref: '#/components/responses/401Error'
+        '403':
+          $ref: '#/components/responses/403Error'
+        '406':
+          $ref: '#/components/responses/406Error'
+        '429':
+          $ref: '#/components/responses/429Error'
+        '500':
+          $ref: '#/components/responses/500Error'
+        default:
+          $ref: '#/components/responses/defaultError'
+  '/blubber/persons/{personId}/blo':
+    get:
+      tags:
+        - entities
+      operationId: getPerson
+      summary: get one person
+      description: get a certain person
+      security:
+        - 'bearerAuth2 []'
+        - 'BearerAuth []'
+      parameters:
+        - $ref: '#/components/parameters/personIdPathParam'
+      responses:
+        '200':
+          description: the person
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Person'
+        '400':
+          $ref: '#/components/responses/400Error'
+        '401':
+          $ref: '#/components/responses/401Error'
+        '403':
+          $ref: '#/components/responses/403Error'
+        '404':
+          $ref: '#/components/responses/404Error'
+        '406':
+          $ref: '#/components/responses/406Error'
+        '429':
+          $ref: '#/components/responses/429Error'
+        '500':
+          $ref: '#/components/responses/500Error'
+        default:
+          $ref: '#/components/responses/defaultError'
+    patch:
+      tags:
+        - entities
+      operationId: updatePerson
+      summary: update one person
+      description: update a certain person
+      security:
+        - 'bearerAuth2 []'
+        - 'BearerAuth []'
+      parameters:
+        - $ref: '#/components/parameters/personIdPathParam'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Person'
+      responses:
+        '200':
+          description: the person ID
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PersonId'
+        '202':
+          description: OK
+        '400':
+          $ref: '#/components/responses/400Error'
+        '401':
+          $ref: '#/components/responses/401Error'
+        '403':
+          $ref: '#/components/responses/403Error'
+        '404':
+          $ref: '#/components/responses/404Error'
+        '406':
+          $ref: '#/components/responses/406Error'
+        '429':
+          $ref: '#/components/responses/429Error'
+        '500':
+          $ref: '#/components/responses/500Error'
+        default:
+          $ref: '#/components/responses/defaultError'
+  '/foo/users/{userId}/bar/account':
+    post:
+      tags:
+        - entities
+      operationId: newAccount
+      summary: create new account for a user
+      description: multiline create new account
+      security:
+        - 'basicAuth []'
+        - 'apiKey []'
+        - 'appId []'
+        - 'BearerAuth []'
+      parameters:
+        - $ref: '#/components/parameters/userIdPathParam'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserBarAccount'
+      responses:
+        '200':
+          description: the user bar account ID
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserBarAccountId'
+        '400':
+          $ref: '#/components/responses/400Error'
+        '500':
+          $ref: '#/components/responses/500Error'
+    put:
+      tags:
+        - entities
+      operationId: updateOrCreateUserBarAccount
+      summary: update or create one user bar account
+      description: update an existing user bar account or create a new one
+      security:
+        - 'basicAuth []'
+        - 'apiKey []'
+        - 'appId []'
+        - 'BearerAuth []'
+      parameters:
+        - $ref: '#/components/parameters/userIdPathParam'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserBarAccount'
+      responses:
+        '200':
+          description: the user bar account ID
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserBarAccountId'
+        '201':
+          description: the user bar account ID
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserBarAccountId'
+        '202':
+          description: OK
+        '400':
+          $ref: '#/components/responses/400Error'
+        '401':
+          $ref: '#/components/responses/401Error'
+        '403':
+          $ref: '#/components/responses/403Error'
+        '406':
+          $ref: '#/components/responses/406Error'
+        '429':
+          $ref: '#/components/responses/429Error'
+        '500':
+          $ref: '#/components/responses/500Error'
+        default:
+          $ref: '#/components/responses/defaultError'
+  '/foo/users/{userId}/bar/accounts':
+    get:
+      tags:
+        - entities
+      operationId: getUserBarAccounts
+      summary: list of all accounts of a user
+      description: returns a list of a user's accounts
+      security:
+        - 'basicAuth []'
+        - 'apiKey []'
+        - 'appId []'
+        - 'BearerAuth []'
+      parameters:
+        - $ref: '#/components/parameters/userIdPathParam'
+      responses:
+        '200':
+          $ref: '#/components/schemas/GetUserBarAccountsResponse'
+        '400':
+          $ref: '#/components/responses/400Error'
+        '401':
+          $ref: '#/components/responses/401Error'
+        '403':
+          $ref: '#/components/responses/403Error'
+        '404':
+          $ref: '#/components/responses/404Error'
+        '406':
+          $ref: '#/components/responses/406Error'
+        '429':
+          $ref: '#/components/responses/429Error'
+        '500':
+          $ref: '#/components/responses/500Error'
+        default:
+          $ref: '#/components/responses/defaultError'
+  '/foo/users/{userId}/bar/accounts/{accountId}':
+    get:
+      tags:
+        - entities
+      operationId: getUserBarAccount
+      summary: get account for a user
+      description: multiline get user account
+      security:
+        - 'basicAuth []'
+        - 'apiKey []'
+        - 'appId []'
+        - 'BearerAuth []'
+      parameters:
+        - $ref: '#/components/parameters/accountTypeQueryParam'
+        - $ref: '#/components/parameters/userIdPathParam'
+        - $ref: '#/components/parameters/accountIdPathParam'
+      responses:
+        '200':
+          description: the user bar account
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserBarAccount'
+        '400':
+          $ref: '#/components/responses/400Error'
+        '401':
+          $ref: '#/components/responses/401Error'
+        '403':
+          $ref: '#/components/responses/403Error'
+        '404':
+          $ref: '#/components/responses/404Error'
+        '406':
+          $ref: '#/components/responses/406Error'
+        '429':
+          $ref: '#/components/responses/429Error'
+        '500':
+          $ref: '#/components/responses/500Error'
+        default:
+          $ref: '#/components/responses/defaultError'
+    patch:
+      tags:
+        - entities
+      operationId: updateUserBarAccount
+      summary: update one user bar account
+      description: update a certain user bar account
+      security:
+        - 'basicAuth []'
+        - 'apiKey []'
+        - 'appId []'
+        - 'BearerAuth []'
+      parameters:
+        - $ref: '#/components/parameters/userIdPathParam'
+        - $ref: '#/components/parameters/accountIdPathParam'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserBarAccount'
+      responses:
+        '200':
+          description: the user bar account ID
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserBarAccountId'
+        '202':
+          description: OK
+        '400':
+          $ref: '#/components/responses/400Error'
+        '401':
+          $ref: '#/components/responses/401Error'
+        '403':
+          $ref: '#/components/responses/403Error'
+        '404':
+          $ref: '#/components/responses/404Error'
+        '406':
+          $ref: '#/components/responses/406Error'
+        '429':
+          $ref: '#/components/responses/429Error'
+        '500':
+          $ref: '#/components/responses/500Error'
+        default:
+          $ref: '#/components/responses/defaultError'
+    delete:
+      tags:
+        - entities
+      operationId: deleteUserBarAccount
+      summary: delete one user bar account
+      description: delete a certain user bar account
+      security:
+        - 'basicAuth []'
+        - 'apiKey []'
+        - 'appId []'
+        - 'BearerAuth []'
+      parameters:
+        - $ref: '#/components/parameters/userIdPathParam'
+        - $ref: '#/components/parameters/accountIdPathParam'
+      responses:
+        '200':
+          description: OK
+        '400':
+          $ref: '#/components/responses/400Error'
+        '401':
+          $ref: '#/components/responses/401Error'
+        '403':
+          $ref: '#/components/responses/403Error'
+        '404':
+          $ref: '#/components/responses/404Error'
+        '406':
+          $ref: '#/components/responses/406Error'
+        '429':
+          $ref: '#/components/responses/429Error'
+        '500':
+          $ref: '#/components/responses/500Error'
+        default:
+          $ref: '#/components/responses/defaultError'
+  '/foo/users/{userId}/bar/accounts/{accountId}/bor/transaction':
+    post:
+      tags:
+        - entities
+      operationId: createUserBarAccountBorTransaction
+      summary: create one user bar account bor transaction
+      description: create a new user bar account bor transaction
+      security:
+        - 'BearerAuth []'
+      parameters:
+        - $ref: '#/components/parameters/userIdPathParam'
+        - $ref: '#/components/parameters/accountIdPathParam'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserBarAccountBorTransaction'
+      responses:
+        '200':
+          description: the user bar account bor transaction ID
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserBarAccountBorTransactionId'
+        '201':
+          description: the user bar account bor transaction ID
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserBarAccountBorTransactionId'
+        '202':
+          description: OK
+        '400':
+          $ref: '#/components/responses/400Error'
+        '401':
+          $ref: '#/components/responses/401Error'
+        '403':
+          $ref: '#/components/responses/403Error'
+        '406':
+          $ref: '#/components/responses/406Error'
+        '429':
+          $ref: '#/components/responses/429Error'
+        '500':
+          $ref: '#/components/responses/500Error'
+        default:
+          $ref: '#/components/responses/defaultError'
+    put:
+      tags:
+        - entities
+      operationId: updateOrCreateUserBarAccountBorTransaction
+      summary: update or create one user bar account bor transaction
+      description: update an existing user bar account bor transaction or create a new one
+      security:
+        - 'BearerAuth []'
+      parameters:
+        - $ref: '#/components/parameters/userIdPathParam'
+        - $ref: '#/components/parameters/accountIdPathParam'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserBarAccountBorTransaction'
+      responses:
+        '200':
+          description: the user bar account bor transaction ID
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserBarAccountBorTransactionId'
+        '201':
+          description: the user bar account bor transaction ID
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserBarAccountBorTransactionId'
+        '202':
+          description: OK
+        '400':
+          $ref: '#/components/responses/400Error'
+        '401':
+          $ref: '#/components/responses/401Error'
+        '403':
+          $ref: '#/components/responses/403Error'
+        '406':
+          $ref: '#/components/responses/406Error'
+        '429':
+          $ref: '#/components/responses/429Error'
+        '500':
+          $ref: '#/components/responses/500Error'
+        default:
+          $ref: '#/components/responses/defaultError'
+  '/foo/users/{userId}/bar/accounts/{accountId}/bor/transactions':
+    get:
+      tags:
+        - entities
+      operationId: getUserBarAccountBorTransactions
+      summary: get all user bar account bor transactions
+      description: retrieve a list of all user bar account bor transactions
+      security:
+        - 'BearerAuth []'
+      parameters:
+        - $ref: '#/components/parameters/orderByQueryParam'
+        - $ref: '#/components/parameters/searchForQueryParam'
+        - $ref: '#/components/parameters/paginationPageQueryParam'
+        - $ref: '#/components/parameters/paginationLimitQueryParam'
+        - $ref: '#/components/parameters/paginationLastQueryParam'
+        - $ref: '#/components/parameters/paginationTotalQueryParam'
+        - $ref: '#/components/parameters/userIdPathParam'
+        - $ref: '#/components/parameters/accountIdPathParam'
+      responses:
+        '200':
+          $ref: '#/components/schemas/GetUserBarAccountBorTransactionsResponse'
+        '400':
+          $ref: '#/components/responses/400Error'
+        '401':
+          $ref: '#/components/responses/401Error'
+        '403':
+          $ref: '#/components/responses/403Error'
+        '404':
+          $ref: '#/components/responses/404Error'
+        '406':
+          $ref: '#/components/responses/406Error'
+        '429':
+          $ref: '#/components/responses/429Error'
+        '500':
+          $ref: '#/components/responses/500Error'
+        default:
+          $ref: '#/components/responses/defaultError'
+  '/foo/users/{userId}/bar/accounts/{accountId}/bor/transactions/{transactionId}':
+    get:
+      tags:
+        - entities
+      operationId: getUserBarAccountBorTransaction
+      summary: get one user bar account bor transaction
+      description: get a certain user bar account bor transaction
+      security:
+        - 'BearerAuth []'
+      parameters:
+        - $ref: '#/components/parameters/userIdPathParam'
+        - $ref: '#/components/parameters/accountIdPathParam'
+        - $ref: '#/components/parameters/transactionIdPathParam'
+      responses:
+        '200':
+          description: the user bar account bor transaction
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserBarAccountBorTransaction'
+        '400':
+          $ref: '#/components/responses/400Error'
+        '401':
+          $ref: '#/components/responses/401Error'
+        '403':
+          $ref: '#/components/responses/403Error'
+        '404':
+          $ref: '#/components/responses/404Error'
+        '406':
+          $ref: '#/components/responses/406Error'
+        '429':
+          $ref: '#/components/responses/429Error'
+        '500':
+          $ref: '#/components/responses/500Error'
+        default:
+          $ref: '#/components/responses/defaultError'
+    patch:
+      tags:
+        - entities
+      operationId: updateUserBarAccountBorTransaction
+      summary: update one user bar account bor transaction
+      description: update a certain user bar account bor transaction
+      security:
+        - 'BearerAuth []'
+      parameters:
+        - $ref: '#/components/parameters/userIdPathParam'
+        - $ref: '#/components/parameters/accountIdPathParam'
+        - $ref: '#/components/parameters/transactionIdPathParam'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserBarAccountBorTransaction'
+      responses:
+        '200':
+          description: the user bar account bor transaction ID
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserBarAccountBorTransactionId'
+        '202':
+          description: OK
+        '400':
+          $ref: '#/components/responses/400Error'
+        '401':
+          $ref: '#/components/responses/401Error'
+        '403':
+          $ref: '#/components/responses/403Error'
+        '404':
+          $ref: '#/components/responses/404Error'
+        '406':
+          $ref: '#/components/responses/406Error'
+        '429':
+          $ref: '#/components/responses/429Error'
+        '500':
+          $ref: '#/components/responses/500Error'
+        default:
+          $ref: '#/components/responses/defaultError'
+    delete:
+      tags:
+        - entities
+      operationId: deleteUserBarAccountBorTransaction
+      summary: delete one user bar account bor transaction
+      description: delete a certain user bar account bor transaction
+      security:
+        - 'BearerAuth []'
+      parameters:
+        - $ref: '#/components/parameters/userIdPathParam'
+        - $ref: '#/components/parameters/accountIdPathParam'
+        - $ref: '#/components/parameters/transactionIdPathParam'
+      responses:
+        '200':
+          description: OK
+        '400':
+          $ref: '#/components/responses/400Error'
+        '401':
+          $ref: '#/components/responses/401Error'
+        '403':
+          $ref: '#/components/responses/403Error'
+        '404':
+          $ref: '#/components/responses/404Error'
+        '406':
+          $ref: '#/components/responses/406Error'
+        '429':
+          $ref: '#/components/responses/429Error'
+        '500':
+          $ref: '#/components/responses/500Error'
+        default:
+          $ref: '#/components/responses/defaultError'

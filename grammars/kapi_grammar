@@ -1,0 +1,396 @@
+{
+    use Data::Dumper::Concise;
+    use File::Slurp;
+
+    $::RD_ERRORS = 1;
+    $::RD_WARN = 3;
+    $::RD_HINT = 1;
+
+    $::RD_AUTOACTION = q { $return = $#item == 1 ? { $item[0] => $item[1] } : { %item } };
+}
+
+startrule: 
+    <skip: qr{(?xs:
+          (?: \s+                       # Whitespace
+          |   /[*] (?:(?![*]/).)* [*]/  # Inline comment
+          |   // [^\n]* \n?             # End of line comment
+          )
+       )*}>
+    (TypeInclude | Include | API)(s)
+    /\Z/
+    { $item[2] }
+
+Comment: SingleLineComment(s) | MultiLineComment
+
+TypeInclude: '@types' /[<"]/ Filename /[>"]/
+{
+    print STDERR "type include found <$item[3]>\n" if $::debug > 1;
+
+    $thisparser->{_creator}->parse_types($item[3]);
+}
+
+Include: '@include' /[<"]/ Filename /[>"]/
+{
+    print STDERR "include found <$item[3]>\n" if $::debug > 1;
+
+    $text = read_file($item[3]) . $text
+}
+
+API: /api:?/i ApiName OpenBrace ApiPart(s) CloseBrace
+{
+    my $api = {};
+
+    $api->{ApiName} = $item{ApiName};
+
+    foreach my $apipart (@{$item{'ApiPart(s)'}})
+    {
+        my $key = (keys %$apipart)[0];
+
+        if ($key =~ /^(Prolog|Security)$/i)
+        {
+            $api->{ucfirst $key} = $apipart->{$key};
+        }
+        elsif ($key eq 'ParameterDefinitions')
+        {
+            foreach my $pd (@{$apipart->{$key}})
+            {
+                my $pdkey = (keys %$pd)[0];
+
+                $api->{ParameterDefinitions}->{$pdkey} = $pd->{$pdkey};
+            }
+        }
+        else
+        {
+            $api->{Services}->{$key} = $apipart->{$key};
+        }
+    }
+
+    if ($::debug > 1)
+    {
+        print "=" x 80, "\n";
+        print "parsed API\n";
+        print "=" x 80, "\n";
+
+        print Dumper $api;
+        print "=" x 80, "\n\n\n";
+
+    }
+
+    $thisparser->{_creator}->api($api);
+}
+
+ApiPart: Prolog | ParameterDefinitions | Service | Security
+
+ApiName: Identifier
+
+Prolog: /prolog:?/i OpenBrace KeyValuePair(s) CloseBrace
+{
+    my $res = {};
+
+    foreach my $kv (@{$item[3]})
+    {
+        foreach my $k (keys %$kv)
+        {
+            $res->{$k} = $kv->{$k};
+        }
+    }
+
+    $return = { Prolog => $res };
+}
+
+ParameterDefinitions: /parameters:?/i OpenBrace ParameterDefinition(s?) CloseBrace
+{
+    $return = { ParameterDefinitions => $item[3] };
+}
+
+ParameterDefinition: /(header|query|cookie):?/i Array
+{
+    $item[1] =~ s/:$//;
+
+    my $pdef = {};
+
+    foreach my $p (@{$item[2]})
+    {
+        my ($pname, $opt);
+
+        if (ref($p))
+        {
+            my $pkey = (keys %$p)[0];
+
+            ($pname, $opt) = $pkey =~ /([^?!]+)([?!])?/;
+
+            $pdef->{$pname} = $p->{$pkey};
+        }
+        else
+        {
+            ($pname, $opt) = $p =~ /([^?!]+)([?!])?/;
+
+            $pdef->{$pname} = 
+            { 
+                type => 'Str', 
+                name => $pname, 
+            };
+        }
+
+        $pdef->{$pname}->{required} = $opt eq '!' ? 
+                                      'true' : 
+                                      $opt eq '?' ?
+                                      'false' :
+                                      undef,
+    }
+
+    $return = { $item[1] => $pdef };
+}
+
+Service: Identifier Colon(?) OpenBrace (Description | Parameters | Security | EndPoint)(s) CloseBrace
+{
+    my $service = {};
+
+    foreach my $ep (@{$item[4]})
+    {
+        foreach my $k (keys %$ep)
+        {
+            $service->{$k} = $ep->{$k};
+        }
+    }
+
+    $return = { $item[1] => $service };
+}
+
+EndPoint: Identifier Colon(?) OpenBrace EndPointPart(s?) CloseBrace
+{
+    my $endpoint = {};
+
+    foreach my $epp (@{$item[4]})
+    {
+        foreach my $k (keys %$epp)
+        {
+            $endpoint->{$k} = $epp->{$k};
+        }
+    }
+
+    $return = { $item[1] => $endpoint };
+}
+
+EndPointPart: Description | Security | Parameters | Operations
+{
+    $return = $item[1];
+}
+
+Description: /description:?/i AnyString
+{
+    $return = { description => $item[2] };
+}
+
+Security: /(security|securities):?/i Array
+{
+    $return = { security => $item[2] };
+}
+
+Parameters: /parameters:?/i OpenBrace ParametersArray(s?) CloseBrace
+{
+    my $parameters = {};
+
+    foreach my $h (@{$item[3]})
+    {
+        foreach my $k (keys %$h)
+        {
+            $parameters->{$k} = $h->{$k};
+        }
+    }
+
+    $return = { parameters => $parameters };
+}
+
+ParametersArray: /(header|path|query|cookie)\s*:?/i Array
+{
+    $item[1] =~ s/\s*:\s*$//;
+
+    $return = { $item[1] => $item[2] };
+}
+
+HeaderParameters: /header:?/i Array
+{
+    $return = { header => $item[2] };
+}
+
+QueryParameters: /query:?/i Array
+{
+    $return = { query => $item[2] };
+}
+
+Operations: /operations:?/i Array
+{
+    my $ops = {};
+
+    foreach my $op (@{$item[2]})
+    {
+        if (ref($op))
+        {
+            my ($key, $value) = %$op;
+
+            $ops->{$key} = $value;
+        }
+        else
+        {
+            my ($rop, $opattr) = $op =~ /([^\(\)]+)(?:\(([PSOU]*)\))?/i;
+            my @opattrs = split(//, $opattr);
+
+            if ($#opattrs >= 0)
+            {
+                foreach my $opattr (@opattrs)
+                {
+                    $ops->{$rop}->{pagination} = 1 if uc($opattr) eq 'P';
+                    $ops->{$rop}->{search}     = 1 if uc($opattr) eq 'S';
+                    $ops->{$rop}->{order}      = 1 if uc($opattr) eq 'O';
+                    $ops->{$rop}->{unique}     = 1 if uc($opattr) eq 'U';
+                }
+            }
+            else
+            {
+                $ops->{$op} = 1;
+            }
+        }
+    }
+
+    $return = { operations => $ops };
+}
+
+KeyValuePair: Key Value Comma(?)
+{
+    if (ref($item[2]) eq 'HASH')
+    {
+        my ($pid, $popt) = $item[1] =~ /^([^!?]+)([!?])?$/;
+
+        if ($popt)
+        {
+            $item[1] = $pid;
+            $item[2]->{required} = $popt eq '!' ?
+                                   'true' :
+                                   $popt eq '?' ?
+                                   'false' :
+                                   undef;
+        }
+    }
+
+    $return = { $item[1] => $item[2] };
+}
+
+Key: Identifier | SingleQuotedString | DoubleQuotedString
+
+Value: (Colon(?) Hash) | (Colon(?) Array) | (Colon AnyString)
+{
+    $return = $item[2] || $item[1];
+}
+
+ArrayKeyValuePair: Key ArrayValue
+{
+    $return = { $item[1] => $item[2] };
+}
+
+ArrayValue: (Colon(?) Hash) | (Colon(?) Array) | (Colon ArrayString)
+{
+    $return = $item[2] || $item[1];
+}
+
+Hash: OpenBrace KeyValuePair(s) CloseBrace
+{
+    my $res = {};
+
+    foreach my $kv (@{$item[2]})
+    {
+        foreach my $k (keys %$kv)
+        {
+            $res->{$k} = $kv->{$k};
+        }
+    }
+
+    $return = $res;
+}
+
+Array: OpenBracket ArrayItem(s?) CloseBracket
+{
+    push @{$item[2]}, $item[3] unless $item[3] eq ']';
+    $return = $item[2];
+}
+
+ArrayItem: FinalArrayItem Comma(?)
+{
+    $return = $item[1];
+} 
+
+FinalArrayItem: ArrayKeyValuePair | Hash | Array | ArrayString
+
+ArrayString: <skip: '\s*'> ( SingleQuotedString | DoubleQuotedString | /[-!#$%&()*+.\/0-9:;<=>?\@A-Z^_`\|~]+/i )
+{
+    $return = $item[2];
+} 
+
+Filename: /[^<>:;,?"*|]+/
+
+SingleLineComment: /[#]|\/\// /[^\n]*/
+
+MultiLineComment: '/*' m{((?! \*/ | /\* ).)*}sx '*/'
+
+AnyString: SingleQuotedString | DoubleQuotedString | String
+
+String: <skip: '\s*'> /[-!#$%&()*+.\/0-9:;<=>?\@A-Z^_`\|~ \t]+/i
+{
+    $item[2] =~ s/[,\s]*$//;
+
+    $return = $item[2];
+}
+
+SingleQuotedString: SingleQuote /(\\'|\n|[^'])*/ SingleQuote
+{
+    $return = $item[2];
+}
+
+DoubleQuotedString: DoubleQuote /(\\"|\n|[^"])*/ DoubleQuote
+{
+    $return = $item[2];
+}
+
+Identifier: /[\/{a-z][a-z0-9_\/{}?!]*/i | SingleQuotedString | DoubleQuotedString
+
+Integer: /[-+]?(\d+|Infinite)/ <reject: $item[1] eq ''>
+{
+    $return = $item[1];
+}
+
+Number: /[+-]?((\d*(.\d+)?)|Infinite)/ <reject: $item[1] eq ''>
+{
+    $return = $item[1];
+}
+
+NewLine: "\n"
+
+Slash: '/'
+
+At: '@'
+
+Dot: '.'
+
+Colon: ':'
+
+Comma: ','
+
+DoubleQuote: '"'
+
+SingleQuote: /'/
+
+OpenBracket: '['
+
+CloseBracket: ']'
+
+OpenBrace: '{'
+
+CloseBrace: '}'
+
+Minus: '-'
+
+Plus: '+'
+
+Equals: '='
+
+EOF: /^\Z/

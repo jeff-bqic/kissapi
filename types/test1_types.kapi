@@ -1,0 +1,40 @@
+Document
+{
+    type: DocumentType
+    file: File
+}
+
+PersonBlo
+{
+    firstName: Str[..255]      
+    {
+        example: "Dagobert"
+    }
+    lastName: Str[..255]      
+    {
+        example: "Duck"
+    }
+}
+
+PersonBloId: UUID
+{
+    description: "the unique ID of a document"
+    example: '5d478950-1cc0-4ca6-b3a5-2f8f2b08d036'
+}
+
+UserBarAccountBorTransaction
+{
+    firstName: Str[..255]      
+    {
+        example: "Dagobert"
+    }
+    lastName: Str[..255]      
+    {
+        example: "Duck"
+    }
+}
+
+UserBarAccount: IBANAccount
+{
+}
+

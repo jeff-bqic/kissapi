@@ -1,0 +1,46 @@
+    @types <types/simple_types.kapi>
+    @types <types/class_types.kapi>
+
+    api: Simple
+    {
+        prolog
+        {
+            kissapi: 1.0
+            title: Simple API
+            version: 1.0
+
+            license:
+            {
+                name: Copyright by kissapi
+                url: https://www.kissapi.de/
+            }
+
+            contact:
+            {
+                name: Hugo Hacker
+                email: hugohacker@kissapi.de
+            }
+
+            description: 'My Simple API'
+
+            servers
+            [
+                'https://api.kissapi.de/api/v1',
+                'https://simple.api.kissapi.de/api/v1'
+                'https://127.0.0.1/simpleapi/v1'
+            ]
+        }
+
+        "user service"
+        {
+            description: my simple user servive
+
+            security: [ bearer ]
+
+            {user}
+            {
+                operations: [ create getList get upcreate update delete ]
+            }
+        }
+    }
+

@@ -1,0 +1,83 @@
+#!/bin/bash
+
+PERL=`which perl 2>/dev/null`
+
+if [ $? -ne 0 ]
+then
+    echo "cannot find perl; please install perl first"
+    exit
+fi
+
+NPM=`which npm 2>/dev/null`
+
+if [ $? -ne 0 ]
+then
+    echo "cannot find npm to install openapi validator and openapi-generator"
+    read -p "do you want to continue [Y|n]? "
+
+    [ "x${REPLY}" == "xn" -o "x${REPLY}" == "xN" ] && exit
+fi
+
+LIBS="Data::Dumper Data::Dumper::Concise File::Slurp File::Spec FindBin FindBin::Real Getopt::Long Getopt::Std Moops Moose::Util Parse::RecDescent Term::ANSIColor Test::Exception Test::More"
+
+CPAN=`which cpan`
+CPANM=`which cpanm 2>/dev/null`
+[ $? -eq 0 ] && CPAN=$CPANM
+
+for mod in `echo $LIBS`
+do
+    `$PERL -M$mod -e '' 2>/dev/null`
+
+    if [ $? -ne 0 ]
+    then
+        echo "try to install perl module <$mod>..."
+        `$CPAN $mod 2>&1 >/dev/null`
+        `$PERL -M$mod -e '' 2>/dev/null`
+
+        if [ $? -ne 0 ]
+        then
+            echo "cannot install perl module; maybe you have to run the script as root" 
+            echo "giving up..."
+
+            exit
+        fi
+    fi
+done
+
+`which openapi 2>/dev/null`
+
+if [ $? -ne 0 ]
+then
+    echo "install openapi for validation purposes"
+    `$NPM install -g openapi 2>&1 >/dev/null`
+
+    `which openapi 2>/dev/null`
+
+    if [ $? -ne 0 ]
+    then
+        echo "cannot install openapi; maybe you have to run the script as root" 
+        echo "giving up..."
+
+        exit
+    fi
+fi
+
+`which openapi-generator-cli 2>/dev/null`
+
+if [ $? -ne 0 ]
+then
+    echo "install openapi-generator-cli for programming libraries generation"
+    `$NPM install -g @openapitools/openapi-generator-cli 2>&1 >/dev/null`
+
+    `which openapi-generator-cli 2>/dev/null`
+
+    if [ $? -ne 0 ]
+    then
+        echo "cannot install openapi-generator-cli; maybe you have to run the script as root" 
+        echo "giving up..."
+
+        exit
+    fi
+fi
+
+

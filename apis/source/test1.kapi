@@ -1,0 +1,46 @@
+@types <types/all_types.kapi>
+@types <types/test1_types.kapi>
+
+api: Test1
+{
+    prolog
+    {
+        kissapi: 1.0
+        title: Test API
+        version: 1.0
+
+        license:
+        {
+            name: Copyright by hugo hacker
+            url: https://www.kissapi.de/
+        }
+
+        contact:
+        {
+            name: Hugo Hacker
+            email: hugo@hacker.com
+        }
+
+        description: 'My Test API'
+
+        servers
+        [
+            'https://api.kissapi.de/api/v1',
+            'https://test.api.kissapi.de/api/v1'
+            'https://127.0.0.1/testapi/v1'
+        ]
+    }
+
+    myservice
+    {
+        description: my service
+
+        security: [ bearer ]
+
+        {user}
+        {
+            operations: [ create getList get upcreate update delete ]
+        }
+    }
+}
+

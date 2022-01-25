@@ -1,0 +1,809 @@
+#############################################################################
+#
+# Copyright (c) by jeff (jeff@lipsia.de)
+#
+# Author:   $Author: jeff $
+#
+# Purpose:  the Kiss API Creator
+#
+# Created:  2021/11/22
+#
+# Update:   $Date: $
+#
+# Revision: $Revision: $
+#
+# File:     $Id: $
+#
+# Notes:
+#
+#############################################################################
+
+use File::Slurp;
+use File::Path qw(make_path);
+use List::Objects::Types -all; #qw(HashObj ArrayObj);
+use List::Objects::WithUtils ':all';
+use Clone qw(clone);
+use Data::Dumper::Concise;
+use Lingua::EN::Inflect qw(PL);
+
+use KissApi::Globals;
+use KissApi::ApiParser;
+use KissApi::TypeParser;
+use KissApi::Creator::YamlWriter;
+use KissApi::Creator::PerlModules;
+
+use Moops;
+
+$| = 1;
+
+class KissApi::Creator 1.0
+{
+    has api_parser =>
+    (
+        is       => 'ro',
+        isa      => Object,
+        reader   => 'ApiParser',
+        writer   => '_api_parser',
+        init_arg => undef,
+    );
+
+    has type_parser =>
+    (
+        is       => 'ro',
+        isa      => Object,
+        reader   => 'TypeParser',
+        writer   => '_type_parser',
+        init_arg => undef,
+    );
+
+    lexical_has types =>
+    (
+        is       => 'rwp',
+        isa      => HashRef[Any],
+        accessor => \(my $_types),
+		default  => sub { {} },
+		init_arg => undef,
+    );
+
+    lexical_has security_schemes =>
+    (
+        is       => 'rwp',
+        isa      => HashRef[Any],
+        accessor => \(my $_security_schemes),
+        default  => sub { {} },
+        init_arg => undef,
+    );
+
+    has yamlw =>
+    (
+        is       => 'ro',
+        isa      => 'KissApi::Creator::YamlWriter',
+        reader   => 'YamlWriter',
+        writer   => '_yaml_writer',
+        init_arg => undef,
+    );
+
+    has perlc =>
+    (
+        is       => 'ro',
+        isa      => 'KissApi::Creator::PerlModules',
+        reader   => 'PerlModuleCreator',
+        writer   => '_perl_module_creator',
+        init_arg => undef,
+    );
+
+    #########################################################################
+    #
+    # constructor
+    #
+    #  parameters:
+    #   $args - { file => <name of the API file to parse> }
+    #
+    #  returns:
+    #   the creator object
+    #
+    #  notes:
+    #
+    #########################################################################
+
+    method BUILD($args = undef)
+    {
+        $self->_api_parser(KissApi::ApiParser->new());
+        
+        $self->ApiParser->{_creator} = $self;
+
+        $self->_type_parser(KissApi::TypeParser->new());
+        
+        $self->TypeParser->{_creator} = $self;
+
+        Lingua::EN::Inflect::classical();
+    }
+
+	#########################################################################
+	#
+	# method to parse a types file
+	#
+	#  parameters:
+	#   $file - the name of the file to parse
+	#
+	#  returns:
+	#   nothing
+	#
+	#########################################################################
+
+	method ParseTypes(Str $file)
+	{
+        my $content = File::Slurp::read_file($file);
+
+        $self->TypeParser->startrule($content);
+    }
+
+	#########################################################################
+	#
+	# method to parse an api file
+	#
+	#  parameters:
+	#   $file - the name of the file to parse
+	#
+	#  returns:
+	#   nothing
+	#
+	#########################################################################
+
+	method ParseApi(Str $file)
+	{
+        my $content = File::Slurp::read_file($file);
+
+        $self->ApiParser->startrule($content);
+    }
+
+	#########################################################################
+	#
+	# method to check if an attribute is allowed for the type
+	#
+	#  parameters:
+	#   $type_name - the type name
+    #   $attr      - the attribute
+    #                {
+    #                    name  => <the name of the attribute>
+    #                    value => <the value>
+    #                }
+	#
+	#  returns:
+	#   true if the attribute is allowed for the type
+	#
+	#########################################################################
+
+	method CheckTypeAttribute(Str $type_name, HashRef $attr)
+	{
+        return $attr->{name} =~ /^(examples?|description)$/ || defined($KissApi::Globals::TypeAttributes->{$type_name}) && $KissApi::Globals::TypeAttributes->{$type_name} =~ /\|$attr->{name}\|/;
+	}
+
+	#########################################################################
+	#
+	# inspector method to check if a type is a basic type
+	#
+	#  parameters:
+	#   $type - the name of the type 
+	#
+	#  returns:
+	#   true if it's a basic type else false
+	#
+	#########################################################################
+
+	method IsBasicType(Str $type)
+	{
+        return $KissApi::Globals::BasicTypes->{$type};
+    }
+
+	#########################################################################
+	#
+	# accessor method to retrieve or store a type
+	#
+	#  parameters:
+	#   $type - the name of the type (read mode) or a data hash (write mode)
+	#
+	#  returns:
+	#   nothing
+	#
+	#########################################################################
+
+	method Type($type = '')
+	{
+        return $self->$_types unless defined $type && $type;
+
+        my $tname;
+
+        if (ref($type))
+        {
+            $tname = $type->{TypeName};
+
+            $self->$_types->{$tname} = Clone::clone($type);
+
+            # delete magic Parse::RecDescent keys /__[A-Z0-9]+__/
+            delete $self->$_types->{$tname}->{$_} foreach grep { /^__[A-Z0-9]+__$/ } keys %{$self->$_types->{$tname}};
+            # delete the TypeName key, it's already stored in the tname
+            delete $self->$_types->{$tname}->{TypeName};
+
+            if ($self->$_types->{$tname}->{Parent} eq 'Class')
+            {
+                foreach my $prop (keys %{$self->$_types->{$tname}->{Properties}})
+                {
+                    $self->$_types->{$tname}->{Properties}->{$prop} =
+                        {
+                            Parent => $self->$_types->{$tname}->{Properties}->{$prop},
+                        }
+                    unless ref($self->$_types->{$tname}->{Properties}->{$prop});
+                }
+            }
+
+            print STDERR "add type <$tname>\n" if $::debug > 3;
+        }
+        else
+        {
+            # $type is a scalar = the name of the type to return
+            $tname = $type;
+        }
+
+        return $self->$_types->{$tname};
+	}
+
+	#########################################################################
+	#
+	# method to create the API
+	#
+	#  parameters:
+	#   $api - the (parsed) API structure
+	#
+	#  returns:
+	#   nothing
+	#
+	#########################################################################
+
+	method CreateApi(HashRef $api)
+	{
+        File::Path::make_path("apis/$api->{ApiName}/perl/$api->{ApiName}/KAPI");
+        File::Path::make_path("apis/$api->{ApiName}/openapi");
+
+        $self->_yaml_writer(KissApi::Creator::YamlWriter->new("apis/$api->{ApiName}/openapi/$api->{ApiName}.yml")) || die "cannot open file <apis/$api->{ApiName}/openapi/$api->{ApiName}.yml> for writing";
+
+# TODO        $self->_perl_module_creator(KissApi::Creator::PerlModules->new("apis/$api->{ApiName}/perl/$api->{ApiName}/API")) || die "cannot create directory <apis/$api->{ApiName}/perl/$api->{ApiName}/API> for perl module creation";
+
+        $self->_analyze_api($api);
+
+        $self->YamlWriter->OpenApi($api);
+
+# TODO        $self->PerlModuleCreator->CreateClasses($api->{Types});
+    }
+
+	#########################################################################
+	#
+	# internal method to analyze the parsed API
+	#
+	#  parameters:
+	#   $api - the (parsed) API structure
+	#
+	#  returns:
+	#   nothing
+	#
+	#########################################################################
+
+	method _analyze_api(HashRef $api)
+	{
+        $api->{ParametersDefinitions} //= {};
+        $api->{Types}                   = $self->$_types;
+        $api->{SecuritySchemes}         = $self->$_security_schemes;
+        $api->{TypesUsed}               = { Error => 1, UUID => 1 };
+
+        foreach my $service_name (keys %{$api->{Services}})
+        {
+            # shortcut for the service
+            my $service = $api->{Services}->{$service_name};
+
+            # extract securites from the service
+            $self->_extract_security(@{$service->{security}}) if defined $service->{security};
+
+            # extract parameters from the service
+            $self->_extract_parameters($service->{parameters}, $api->{ParametersDefinitions}) if defined $service->{parameters};
+
+            foreach my $endpoint_name (keys %$service)
+            {
+                next if $endpoint_name =~ /^(description|security)$/i;
+
+                my $endpoint = $service->{$endpoint_name};
+
+                $self->_prepare_endpoint_data($api, $endpoint_name, $endpoint);
+
+                # extract all path parameters and add them if necessary
+                $self->_extract_path_parameters($endpoint_name, $api);
+
+                # extract all securities of the endpoint
+                $self->_extract_security(@{$endpoint->{security}}) if defined $endpoint->{security};
+
+                # extract all parameters of the endpoint
+                $self->_extract_parameters($endpoint->{parameters}, $api->{ParametersDefinitions}) if defined $endpoint->{parameters};
+
+                foreach my $opkey (keys %{$endpoint->{operations}})
+                {
+                    my $op = $endpoint->{operations}->{$opkey};
+
+                    next unless defined($op) && ref($op);
+
+                    # extract the operation's security
+                    $self->_extract_security($op->{security}) if defined $op->{security};
+
+                    # extract the operation's parameters
+                    $self->_extract_parameters($op->{parameters}, $api->{ParametersDefinitions}) if defined $op->{parameters};
+
+                    if ($op->{pagination})
+                    {
+                        foreach my $pa ('Page', 'Limit', 'Last', 'Total')
+                        {
+                            $api->{ParametersDefinitions}->{query}->{"pagination${pa}"} //=
+                            {
+                                type     => "Pagination${pa}",
+                                name     => "pagination${pa}",
+                                required => "false",
+                            };
+                        }
+                    }
+
+                    if ($op->{search})
+                    {
+                        $api->{ParametersDefinitions}->{query}->{searchFor} //=
+                        {
+                            type     => 'SearchFor',
+                            name     => 'searchFor',
+                            required => 'false',
+                        };
+                    }
+
+                    if ($op->{order})
+                    {
+                        $api->{ParametersDefinitions}->{query}->{orderBy} //=
+                        {
+                            type     => 'OrderBy',
+                            name     => 'orderBy',
+                            required => 'false',
+                        };
+                    }
+                
+                    # mark the request and response fields as used types
+                    foreach my $rr ('request', 'response')
+                    {
+                        if ($op->{$rr})
+                        {
+                            foreach my $type (values %{$op->{$rr}})
+                            {
+                                $api->{TypesUsed}->{$type} = 1;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        $self->_mark_used_types($api);
+
+        if ($::debug > 1)
+        {
+            print "=" x 80, "\n";
+            print "Analyzed API\n";
+            print "=" x 80, "\n";
+
+            print Data::Dumper::Concise::Dumper($api);
+        }
+    }
+
+	#########################################################################
+	#
+	# internal method to prepare the endpoint data
+	#
+	#  parameters:
+    #   $api      - the API hash ref
+    #   $epc_name - the name of the endpoint collection
+	#   $epc      - the endpoint collection
+	#
+	#  returns:
+	#   nothing
+	#
+	#########################################################################
+
+	method _prepare_endpoint_data(HashRef $api, Str $epc_name, HashRef $epc)
+	{
+        $epc_name =~ s/^([^\/])/\/$1/;
+
+        $epc->{operations} = 
+        {
+            create   => 1,
+            upcreate => 1,
+            getList  => 1,
+            get      => 1,
+            update   => 1,
+            delete   => 1,
+        } unless $epc->{operations} && keys %{$epc->{operations}};
+
+        my $epdata = Clone::clone($KissApi::Globals::StandardEndpointData);
+
+        # prepare path and operation id
+        foreach my $k ('get', 'getList', 'create')
+        {
+            $epdata->{$k}->{path} = $epc_name;
+            $epdata->{$k}->{operationId} = $epc_name;
+
+            if ($k eq 'getList')
+            {
+                # the last {param} is replaced by the plural 'params'
+                $epdata->{$k}->{path} =~ s/\{(\w+)\}([^\}]*)$/#$1#$2/;
+            }
+            elsif ($k eq 'create')
+            {
+                # the last {param} is replaced by 'param'
+                $epdata->{$k}->{path}    =~ s/\{(\w+)\}([^\}]*)$/$1$2/;
+            }
+
+            # all {param}'s are replaced by '#param#/{paramId}'
+            $epdata->{$k}->{path} =~ s/\{(\w+)\}/#$1#\/{${1}Id}/g;
+            # all '#param#' are replaced by the pural 'params'
+            $epdata->{$k}->{path} =~ s/#(\w+)#/Lingua::EN::Inflect::PL($1)/ge;
+
+            # anything befor the first param opening brace or
+            # behind the last param closing brace is removed
+            $epdata->{$k}->{operationId} =~ s/^[^\{]+(\{)/$1/g;
+
+            # replace last {param} by '#param#'
+            $epdata->{$k}->{operationId} =~ s/\{(\w+)\}([^\{\}]*)$/#${1}#$2/;
+            # replace all {param}'s by their upper case first pendant 'Param'
+            $epdata->{$k}->{operationId} =~ s/\{(\w+)\}/ucfirst($1)/ge;
+
+            # replace any small letter preceeded by a slash with the upper case 
+            $epdata->{$k}->{operationId} =~ s/\/([a-z])/\U$1/g;
+
+            # remove all slashes
+            $epdata->{$k}->{operationId} =~ s/\///g;
+
+            if ($k eq 'getList')
+            {
+                $epdata->{$k}->{operationId} =~ s/#(\w+)#/ucfirst(Lingua::EN::Inflect::PL(${1}))/e;
+            }
+            else
+            {
+                $epdata->{$k}->{operationId} =~ s/#(\w+)#/ucfirst(${1})/e;
+            }
+        }
+
+        for my $k ('path', 'operationId')
+        {
+            $epdata->{update}->{$k}   = $epdata->{get}->{$k};
+            $epdata->{delete}->{$k}   = $epdata->{get}->{$k};
+            $epdata->{upcreate}->{$k} = $epdata->{create}->{$k};
+        }
+
+        foreach my $op ('create', 'upcreate', 'getList', 'get', 'update', 'delete')
+        {
+            delete $epdata->{$op} unless $epc->{operations}->{$op};
+        }
+
+        $epdata->{TheThing}  = $epdata->{create}->{operationId};
+        $epdata->{TheThings} = $epdata->{getList}->{operationId};
+
+        $api->{TypesUsed}->{$epdata->{TheThing}}     = 1 if $epdata->{create} || $epdata->{upcreate};
+        $api->{TypesUsed}->{"$epdata->{TheThing}Id"} = 1 if $epdata->{get} || $epdata->{update} || $epdata->{delete};
+        $api->{TypesUsed}->{$epdata->{TheThings}}    = 1 if $epdata->{getList};
+
+        $epdata->{theThing}  = lcfirst($epdata->{TheThing});
+        $epdata->{theThings} = lcfirst($epdata->{TheThings});
+
+        ($epdata->{the_thing}  = $epdata->{theThing})  =~ s/([A-Z])/ \L$1/g;
+        ($epdata->{the_things} = $epdata->{theThings}) =~ s/([A-Z])/ \L$1/g;
+
+        $epc->{epdata} = $epdata;
+    }
+
+	#########################################################################
+	#
+	# internal method to mark the used types
+	#
+	#  parameters:
+	#   $api - the API 
+	#
+	#  returns:
+	#   nothing
+	#
+	#########################################################################
+
+	method _mark_used_types(HashRef $api)
+	{
+        foreach my $ptype ('path', 'header', 'query', 'cookie')
+        {
+            next unless $api->{ParametersDefinitions}->{$ptype};
+
+            foreach my $param (keys %{$api->{ParametersDefinitions}->{$ptype}})
+            {
+                next if ! defined($api->{ParametersDefinitions}->{$ptype}->{$param}->{type} );
+
+                $self->_mark_used_type($api, $param);
+            }
+        }
+    }
+
+	#########################################################################
+	#
+	# internal method to mark one used type and all attributes recursively
+	#
+	#  parameters:
+	#   $api       - the API 
+    #   $type_name - the name of the type
+	#
+	#  returns:
+	#   nothing
+	#
+	#########################################################################
+
+	method _mark_used_type(HashRef $api, Str $type_name)
+	{
+         return if $KissApi::Globals::BasicTypes->{$type_name};
+
+         $api->{TypesUsed}->{$type_name} = 1;
+
+         foreach my $prop (keys %{$api->{Types}->{$type_name}->{Properties}})
+         {
+            # shortcut
+            my $p = $api->{Types}->{$type_name}->{Properties}->{$prop};
+
+            $self->_mark_used_type($api, $prop)
+                if ref($p) && defined $p->{Parent} && ! $KissApi::Globals::BasicTypes->{$p->{Parent}};
+         }
+    }
+
+    #########################################################################
+    #
+    # helper method to extract the security schemes
+    #
+    #  parameters:
+    #   @securities - the securities array of an endpoint
+    #
+    #  returns:
+    #   nothing
+    #
+    #  note:
+    #   extracts the security schemes hash:
+    #       {
+    #           apikey =>
+    #           {
+    #               id => # the id of the API key scheme (default: ApiKeyAuth)
+    #               {
+    #                   name => # the name of the key (default: X-API-KEY)
+    #                   in   => # input type (default: header)
+    #                   type => # type (always: apiKey)
+    #               {
+    #           },
+    #           basic =>
+    #           {
+    #               <id> => # id of the scheme (default: BasicAuth)
+    #               {
+    #                   type   => # type of the scheme (always: http)
+    #                   scheme => # scheme (always: basic)
+    #               }
+    #           },
+    #           bearer =>
+    #           {
+    #               <id> => # id of the scheme (default: BearerAuth)
+    #               {
+    #                   type         => # type of the scheme (always: http)
+    #                   scheme       => # scheme (always: bearer)
+    #                   bearerFormat => # bearer format (default: JWT)
+    #               }
+    #           },
+    #       }
+    #
+    #########################################################################
+
+    method _extract_security(@securities)
+    {
+        foreach my $security (@securities)
+        {
+            my $ref = ref($security);
+
+            my $stype;
+            my $sid;
+
+            if ($ref)
+            {
+                $stype = (keys %$security)[0];
+                $sid   = (ref($security->{$stype}) ?
+                          $security->{$stype}->{id} : 
+                          $security->{$stype}) //
+                         $KissApi::Globals::StandardSecurityIds->{$stype};
+            }
+            else
+            {
+                $stype = $security;
+                $sid   = $KissApi::Globals::StandardSecurityIds->{$stype};
+            }
+
+            next if $self->$_security_schemes->{$sid};
+
+            my $sh = Clone::clone($KissApi::Globals::StandardSecurity->{lc $stype});
+
+            if ($ref && ref($security->{$stype}))
+            {
+                foreach my $key (keys %{$security->{$stype}})
+                {
+                    $sh->{$key} = $security->{$stype}->{$key}
+                        unless $key =~ /^(id|type|scheme)$/;
+                }
+            }
+
+            $self->$_security_schemes->{$sid} = $sh;
+        }
+
+        print "+++security:\n", Data::Dumper::Concise::Dumper($self->$_security_schemes) if $::debug > 2;
+    }
+
+	#########################################################################
+	#
+	# internal method to extract all parameters (header, query)
+	#
+	#  parameters:
+	#   $parameters - the parameters hash of an endpoint
+    #   $apiparams  - the API's parameters definitions
+	#
+	#  returns:
+	#   nothing (just manipulates the $apiparams hash)
+	#
+	#########################################################################
+
+	method _extract_parameters(HashRef $parameters, HashRef $apiparams)
+	{
+        foreach my $ptype (keys %$parameters)
+        {
+            foreach my $param (@{$parameters->{$ptype}})
+            {
+                if (ref($param))
+                {
+                    my $pname  = (keys %$param)[0];
+                    my $pvalue = $param->{$pname};
+                    my ($cname, $opt, $vname) = $pvalue =~ /^([^?!(]+)([?!])?(?:\(([-_\w]+)\))?$/;
+                    
+                    if (defined($apiparams->{$ptype}->{$pname}))
+                    {
+                        print STDERR "redefinition of parameter <$param> of type<", defined($apiparams->{$ptype}->{$param}->{type}) ? $apiparams->{$ptype}->{$param}->{type} : 'Str', " as <$cname> -> skip\n"
+                            if defined($apiparams->{$ptype}->{$pname}->{type}) &&
+                               $apiparams->{$ptype}->{$pname}->{type} ne $cname;
+                    }
+                    else
+                    {
+                        $apiparams->{$ptype}->{$pname} =
+                        {
+                            type     => $cname,
+                            name     => $vname // $pname,
+                            required => $opt eq '!' ? 'true' : 'false',
+                        }
+                    }
+                }
+                else
+                {
+                    unless (defined($apiparams->{$ptype}->{$param}))
+                    {
+                        my ($name, $opt) = $param =~ /^([^!?]+)([!?])?$/;
+
+                        $apiparams->{$ptype}->{$param} =
+                        {
+                            type     => 'Str',
+                            name     => $name,
+                            required => $opt eq '!' ? 'true' : 'false',
+                        };
+                    }
+                }
+            }
+        }
+    }
+
+	#########################################################################
+	#
+	# internal method to extract all parameters from a path
+	#
+	#  parameters:
+    #   $path - the path
+    #   $api  - the API
+	#
+	#  returns:
+	#   an array with the path parameters
+	#
+	#########################################################################
+
+	method _extract_path_parameters(Str $path, HashRef $api)
+	{
+        # shortcut for the API params
+        my $apiparams = $api->{ParametersDefinitions};
+
+        # retrieve all path parameters
+        my @pparams = ($path =~ /\{(\w+)\}/g);
+
+        # the complete ID: remove anything before the first '{' and behind
+        # the last '}'
+        (my $cid = $path) =~ s/^[^\{]*\{/{/g;
+        $cid =~ s/\}[^\}]*$/}/g;
+        
+        # the plural of the complete ID: replace last {param} by the plural
+        (my $pid = $cid) =~ s/(.*)\{(\w+)\}/$1#$2#/;
+        $pid =~ s/#(\w+)#/Lingua::EN::Inflect::PL($1)/e;
+
+        # replace all '{param}' by the upper case first version without braces
+        $cid =~ s/\{(\w+)\}/ucfirst(${1})/ge;
+        $pid =~ s/\{(\w+)\}/ucfirst(${1})/ge;
+
+        # replace all slashes followed by a small letter by the uppercase letter
+        $cid =~ s/\/([a-z])/uc($1)/ge;
+        $pid =~ s/\/([a-z])/uc($1)/ge;
+
+        # remove all remaining slashes 
+        $cid =~ s/\///g;
+        $pid =~ s/\///g;
+
+        $cid = ucfirst($cid);
+        $pid = ucfirst($pid);
+
+        # the human readable complete name: 
+        # replace all capital letters by a space and the small letter
+        (my $cname = lcfirst($cid)) =~ s/([A-Z])/ $1/g;
+        $cname =~ s/([A-Z])/lc($1)/ge;
+
+        # same with the plural
+        (my $pcname = lcfirst($pid)) =~ s/([A-Z])/ $1/g;
+        $pcname =~ s/([A-Z])/lc($1)/ge;
+
+        foreach my $pparam (@pparams)
+        {
+            my $id = "${pparam}Id";
+
+            # add to api path parameter
+            $apiparams->{path}->{$id} =
+            {
+                type     => ucfirst($id),
+                name     => $id,
+                required => 'true',
+            } unless $apiparams->{path}->{$id};
+
+            # add to types 
+            $self->$_types->{ucfirst($id)} =
+            {
+                Parent => 'UUID',
+                Properties =>
+                {
+                    description => "the unique ID of the ${id}"
+                }
+            } unless $self->$_types->{ucfirst($id)};
+
+            $api->{TypesUsed}->{ucfirst($id)} = 1;
+        }
+
+        # add also the complete id to the types
+        $self->$_types->{"${cid}Id"} =
+        {
+            Parent => 'UUID',
+            Properties =>
+            {
+                description => "the unique ID of the $cname",
+            }
+        } unless $self->$_types->{"${cid}Id"};
+
+        $api->{TypesUsed}->{"${cid}Id"} = 1;
+
+        # add also the array with the complete id to the types
+        $self->$_types->{$pid} =
+        {
+            Parent => 'Array',
+            Properties => 
+            {
+                description => "a list with the $pcname",
+                item_type => $cid,
+            }
+        } unless $self->$_types->{$pid};
+        
+        $api->{TypesUsed}->{$pid} = 1;
+
+        return @pparams;
+    }
+}

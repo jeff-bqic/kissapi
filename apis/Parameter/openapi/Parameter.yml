@@ -1,0 +1,542 @@
+openapi: 3.1.0
+info: 
+  title: Parameter API
+  version: '1.0'
+  license: 
+    name: Copyright by hugo hacker
+    url: https://www.kissapi.de/
+  contact: 
+    name: Hugo Hacker
+    email: hugo@hacker.com
+  description: My Simple API
+
+servers: 
+  - url: https://api.kissapi.de/api/v1
+
+components: 
+
+  securitySchemes: 
+
+  parameters: 
+    parameterIdPathParam: 
+      name: parameterId
+      in: path
+      required: true
+      schema: 
+        $ref: '#/components/schemas/ParameterId'
+
+  schemas: 
+    Error: 
+      title: Error
+      description: the error
+      type: object
+      properties: 
+        domain: 
+          description: the error domain
+          example: 'AUTHENTICATION'
+          type: string
+          maxLength: 50
+        name: 
+          description: the name of the error
+          example: 'WRONG_CREDENTIALS'
+          type: string
+          maxLength: 50
+        code: 
+          description: the error code
+          example: '102892'
+          type: string
+          minLength: 6
+          maxLength: 6
+          pattern: '^\d{6}$'
+        message: 
+          description: the error message to be displayed
+          example: 'wrong user credentials provided'
+          type: string
+          maxLength: 255
+      required: 
+        - domain
+        - name
+        - code
+        - message
+    GetParametersResponse: 
+      title: GetParametersResponse
+      description: parameters
+      type: object
+      properties: 
+        parameters: 
+          $ref: '#/components/schemas/Parameters'
+      required: 
+        - parameters
+    NonNegativeInt: 
+      title: NonNegativeInt
+      description: a natural number (integer greater or equal zero)
+      example: 0
+      type: integer
+      format: int64
+    PaginationLast: 
+      title: PaginationLast
+      description: the last page of a pagination
+      example: 13
+      type: integer
+      format: int64
+      minimum: 0
+    PaginationLimit: 
+      title: PaginationLimit
+      description: the maximum number of entries per page
+      example: 20
+      type: integer
+      format: int64
+      minimum: 0
+    PaginationPage: 
+      title: PaginationPage
+      description: the current page of the pagination
+      example: 4
+      type: integer
+      format: int64
+      minimum: 0
+    PaginationTotal: 
+      title: PaginationTotal
+      description: the total of entries of a pagination
+      example: 1024
+      type: integer
+      format: int64
+      minimum: 0
+    ParameterId: 
+      title: ParameterId
+      description: an UUID
+      example: '85fed3df-3486-4159-ad98-8fe2dcd25371'
+      type: string
+      pattern: '^[0-9A-Fa-f]{8}(?:-[0-9A-Fa-f]{4}){3}-[0-9A-Fa-f]{12}$'
+    Parameters: 
+      title: Parameters
+      description: list of parameters
+      type: array
+      minItems: 0
+      maxItems: 500
+      items: 
+        $ref: '#/components/schemas/Parameter'
+
+tags: 
+  - name: parameters
+    description: 
+
+paths: 
+  '/my/path/with/parameter': 
+    post: 
+      tags: 
+        - parameters
+      operationId: createParameter
+      summary: create one parameter
+      description: create a new parameter
+      security: 
+      requestBody: 
+        required: true
+        content: 
+          application/json: 
+            schema: 
+              $ref: '#/components/schemas/Parameter'
+      responses: 
+        '200': 
+          description: create a new parameter
+          content: 
+            application/json: 
+              schema: 
+                $ref: '#/components/schemas/ParameterId'
+        '201': 
+          description: create a new parameter
+          content: 
+            application/json: 
+              schema: 
+                $ref: '#/components/schemas/ParameterId'
+        '202': 
+          description: create a new parameter
+        '400': 
+          description: Bad Request Error
+          content: 
+            application/json: 
+              schema: 
+                $ref: '#/components/schemas/Error'
+        '401': 
+          description: Unauthorized Error
+          content: 
+            application/json: 
+              schema: 
+                $ref: '#/components/schemas/Error'
+        '403': 
+          description: Forbidden Error
+          content: 
+            application/json: 
+              schema: 
+                $ref: '#/components/schemas/Error'
+        '406': 
+          description: Not Acceptable Error
+          content: 
+            application/json: 
+              schema: 
+                $ref: '#/components/schemas/Error'
+        '415': 
+          description: Unsupporrted Media Type Error
+          content: 
+            application/json: 
+              schema: 
+                $ref: '#/components/schemas/Error'
+        '429': 
+          description: Too Many Requests Error
+          content: 
+            application/json: 
+              schema: 
+                $ref: '#/components/schemas/Error'
+        '500': 
+          description: Internal Server Error
+          content: 
+            application/json: 
+              schema: 
+                $ref: '#/components/schemas/Error'
+        'default': 
+          description: Unxepected Error
+          content: 
+            application/json: 
+              schema: 
+                $ref: '#/components/schemas/Error'
+    put: 
+      tags: 
+        - parameters
+      operationId: updateOrCreateParameter
+      summary: update or create one parameter
+      description: update an existing parameter or create a new one
+      security: 
+      requestBody: 
+        required: true
+        content: 
+          application/json: 
+            schema: 
+              $ref: '#/components/schemas/Parameter'
+      responses: 
+        '200': 
+          description: update an existing parameter or create a new one
+          content: 
+            application/json: 
+              schema: 
+                $ref: '#/components/schemas/ParameterId'
+        '201': 
+          description: update an existing parameter or create a new one
+          content: 
+            application/json: 
+              schema: 
+                $ref: '#/components/schemas/ParameterId'
+        '202': 
+          description: update an existing parameter or create a new one
+        '400': 
+          description: Bad Request Error
+          content: 
+            application/json: 
+              schema: 
+                $ref: '#/components/schemas/Error'
+        '401': 
+          description: Unauthorized Error
+          content: 
+            application/json: 
+              schema: 
+                $ref: '#/components/schemas/Error'
+        '403': 
+          description: Forbidden Error
+          content: 
+            application/json: 
+              schema: 
+                $ref: '#/components/schemas/Error'
+        '406': 
+          description: Not Acceptable Error
+          content: 
+            application/json: 
+              schema: 
+                $ref: '#/components/schemas/Error'
+        '415': 
+          description: Unsupporrted Media Type Error
+          content: 
+            application/json: 
+              schema: 
+                $ref: '#/components/schemas/Error'
+        '429': 
+          description: Too Many Requests Error
+          content: 
+            application/json: 
+              schema: 
+                $ref: '#/components/schemas/Error'
+        '500': 
+          description: Internal Server Error
+          content: 
+            application/json: 
+              schema: 
+                $ref: '#/components/schemas/Error'
+        'default': 
+          description: Unxepected Error
+          content: 
+            application/json: 
+              schema: 
+                $ref: '#/components/schemas/Error'
+  '/my/path/with/parameters': 
+    get: 
+      tags: 
+        - parameters
+      operationId: getParameters
+      summary: get all parameters
+      description: retrieve a list of all parameters
+      security: 
+      responses: 
+        '200': 
+          description: retrieve a list of all parameters
+          content: 
+            application/json: 
+              schema: 
+                $ref: '#/components/schemas/GetParametersResponse'
+        '400': 
+          description: Bad Request Error
+          content: 
+            application/json: 
+              schema: 
+                $ref: '#/components/schemas/Error'
+        '401': 
+          description: Unauthorized Error
+          content: 
+            application/json: 
+              schema: 
+                $ref: '#/components/schemas/Error'
+        '403': 
+          description: Forbidden Error
+          content: 
+            application/json: 
+              schema: 
+                $ref: '#/components/schemas/Error'
+        '404': 
+          description: Not Found Error
+          content: 
+            application/json: 
+              schema: 
+                $ref: '#/components/schemas/Error'
+        '406': 
+          description: Not Acceptable Error
+          content: 
+            application/json: 
+              schema: 
+                $ref: '#/components/schemas/Error'
+        '429': 
+          description: Too Many Requests Error
+          content: 
+            application/json: 
+              schema: 
+                $ref: '#/components/schemas/Error'
+        '500': 
+          description: Internal Server Error
+          content: 
+            application/json: 
+              schema: 
+                $ref: '#/components/schemas/Error'
+        'default': 
+          description: Unxepected Error
+          content: 
+            application/json: 
+              schema: 
+                $ref: '#/components/schemas/Error'
+  '/my/path/with/parameters/{parameterId}': 
+    get: 
+      tags: 
+        - parameters
+      operationId: getParameter
+      summary: get one parameter
+      description: get a certain parameter
+      security: 
+      parameters: 
+        - $ref: '#/components/parameters/parameterIdPathParam'
+      responses: 
+        '200': 
+          description: get a certain parameter
+          content: 
+            application/json: 
+              schema: 
+                $ref: '#/components/schemas/Parameter'
+        '400': 
+          description: Bad Request Error
+          content: 
+            application/json: 
+              schema: 
+                $ref: '#/components/schemas/Error'
+        '401': 
+          description: Unauthorized Error
+          content: 
+            application/json: 
+              schema: 
+                $ref: '#/components/schemas/Error'
+        '403': 
+          description: Forbidden Error
+          content: 
+            application/json: 
+              schema: 
+                $ref: '#/components/schemas/Error'
+        '404': 
+          description: Not Found Error
+          content: 
+            application/json: 
+              schema: 
+                $ref: '#/components/schemas/Error'
+        '406': 
+          description: Not Acceptable Error
+          content: 
+            application/json: 
+              schema: 
+                $ref: '#/components/schemas/Error'
+        '429': 
+          description: Too Many Requests Error
+          content: 
+            application/json: 
+              schema: 
+                $ref: '#/components/schemas/Error'
+        '500': 
+          description: Internal Server Error
+          content: 
+            application/json: 
+              schema: 
+                $ref: '#/components/schemas/Error'
+        'default': 
+          description: Unxepected Error
+          content: 
+            application/json: 
+              schema: 
+                $ref: '#/components/schemas/Error'
+    patch: 
+      tags: 
+        - parameters
+      operationId: updateParameter
+      summary: update one parameter
+      description: update a certain parameter
+      security: 
+      parameters: 
+        - $ref: '#/components/parameters/parameterIdPathParam'
+      requestBody: 
+        required: true
+        content: 
+          application/json: 
+            schema: 
+              $ref: '#/components/schemas/Parameter'
+      responses: 
+        '200': 
+          description: update a certain parameter
+          content: 
+            application/json: 
+              schema: 
+                $ref: '#/components/schemas/ParameterId'
+        '202': 
+          description: update a certain parameter
+        '400': 
+          description: Bad Request Error
+          content: 
+            application/json: 
+              schema: 
+                $ref: '#/components/schemas/Error'
+        '401': 
+          description: Unauthorized Error
+          content: 
+            application/json: 
+              schema: 
+                $ref: '#/components/schemas/Error'
+        '403': 
+          description: Forbidden Error
+          content: 
+            application/json: 
+              schema: 
+                $ref: '#/components/schemas/Error'
+        '404': 
+          description: Not Found Error
+          content: 
+            application/json: 
+              schema: 
+                $ref: '#/components/schemas/Error'
+        '406': 
+          description: Not Acceptable Error
+          content: 
+            application/json: 
+              schema: 
+                $ref: '#/components/schemas/Error'
+        '415': 
+          description: Unsupporrted Media Type Error
+          content: 
+            application/json: 
+              schema: 
+                $ref: '#/components/schemas/Error'
+        '429': 
+          description: Too Many Requests Error
+          content: 
+            application/json: 
+              schema: 
+                $ref: '#/components/schemas/Error'
+        '500': 
+          description: Internal Server Error
+          content: 
+            application/json: 
+              schema: 
+                $ref: '#/components/schemas/Error'
+        'default': 
+          description: Unxepected Error
+          content: 
+            application/json: 
+              schema: 
+                $ref: '#/components/schemas/Error'
+    delete: 
+      tags: 
+        - parameters
+      operationId: deleteParameter
+      summary: delete one parameter
+      description: delete a certain parameter
+      security: 
+      parameters: 
+        - $ref: '#/components/parameters/parameterIdPathParam'
+      responses: 
+        '200': 
+          description: delete a certain parameter
+        '400': 
+          description: Bad Request Error
+          content: 
+            application/json: 
+              schema: 
+                $ref: '#/components/schemas/Error'
+        '401': 
+          description: Unauthorized Error
+          content: 
+            application/json: 
+              schema: 
+                $ref: '#/components/schemas/Error'
+        '403': 
+          description: Forbidden Error
+          content: 
+            application/json: 
+              schema: 
+                $ref: '#/components/schemas/Error'
+        '404': 
+          description: Not Found Error
+          content: 
+            application/json: 
+              schema: 
+                $ref: '#/components/schemas/Error'
+        '406': 
+          description: Not Acceptable Error
+          content: 
+            application/json: 
+              schema: 
+                $ref: '#/components/schemas/Error'
+        '429': 
+          description: Too Many Requests Error
+          content: 
+            application/json: 
+              schema: 
+                $ref: '#/components/schemas/Error'
+        '500': 
+          description: Internal Server Error
+          content: 
+            application/json: 
+              schema: 
+                $ref: '#/components/schemas/Error'
+        'default': 
+          description: Unxepected Error
+          content: 
+            application/json: 
+              schema: 
+                $ref: '#/components/schemas/Error'
